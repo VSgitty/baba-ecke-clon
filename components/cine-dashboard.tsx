@@ -5,7 +5,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Dice5, ExternalLink, Filter, Flame, Sparkles, Star } from "lucide-react";
 
 import type { CatalogItem } from "@/lib/catalog";
-import { getFranchiseOverlay } from "@/lib/franchise-overlay";
 import { franchises } from "@/data/content";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -223,19 +222,13 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
     const py = (event.clientY - rect.top) / rect.height;
     const tiltX = ((0.5 - py) * 10).toFixed(2);
     const tiltY = ((px - 0.5) * 12).toFixed(2);
-    const parallaxX = ((px - 0.5) * 14).toFixed(2);
-    const parallaxY = ((py - 0.5) * 10).toFixed(2);
     event.currentTarget.style.setProperty("--tilt-x", `${tiltX}deg`);
     event.currentTarget.style.setProperty("--tilt-y", `${tiltY}deg`);
-    event.currentTarget.style.setProperty("--fx", `${parallaxX}px`);
-    event.currentTarget.style.setProperty("--fy", `${parallaxY}px`);
   }
 
   function resetCoverMove(event: React.MouseEvent<HTMLElement>) {
     event.currentTarget.style.setProperty("--tilt-x", "0deg");
     event.currentTarget.style.setProperty("--tilt-y", "0deg");
-    event.currentTarget.style.setProperty("--fx", "0px");
-    event.currentTarget.style.setProperty("--fy", "0px");
   }
 
   return (
@@ -445,7 +438,6 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
 
             <div className="catalog-shelf grid gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
               {filteredCatalog.slice(0, 60).map((item) => {
-                const overlay = getFranchiseOverlay(item);
                 return (
                   <article
                     key={item.id}
@@ -491,18 +483,6 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                           {item.rating.toFixed(1)}
                         </div>
                       ) : null}
-                    </div>
-
-                    <div className={`franchise-layer ${overlay.glowClass}`} aria-hidden>
-                      <div className="franchise-aura" />
-                      <img
-                        src={overlay.asset}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                        className="franchise-emblem"
-                      />
-                      <span className="franchise-tag">{overlay.label}</span>
                     </div>
 
                     <div className="cover-reflection" aria-hidden />
