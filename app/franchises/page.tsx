@@ -44,11 +44,19 @@ async function fetchCatalogEntryAssets(entry: (typeof franchiseWorlds)[0]["catal
   return resolveMovieAssets(title, entry.year);
 }
 
+async function fetchHeroSourceAssets(world: (typeof franchiseWorlds)[0]): Promise<TmdbAssets> {
+  const source = world.heroSource;
+  if (source.type === "tv") {
+    return resolveTvAssets(source.title, source.year, source.tmdbId);
+  }
+  return resolveMovieAssets(source.title, source.year, source.tmdbId);
+}
+
 export default async function FranchisesPage() {
   const worldSettled = await Promise.allSettled(
     franchiseWorlds.map(async (world) => {
       const [heroBase, catalogSettled] = await Promise.all([
-        fetchWorldAssets(world.tmdb),
+        fetchHeroSourceAssets(world),
         Promise.allSettled(world.catalog.map((entry) => fetchCatalogEntryAssets(entry))),
       ]);
 

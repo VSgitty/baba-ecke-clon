@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { AnimatePresence, motion, useMotionTemplate, useMotionValue, useScroll, useTransform } from "framer-motion";
-import { ChevronDown, Sparkles } from "lucide-react";
+import { ChevronDown, Play, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { franchiseWorlds, type FranchiseWorldDef } from "@/data/franchise-worlds";
@@ -45,6 +45,9 @@ function FranchiseSection({
   const fogOpacity = useTransform(scrollYProgress, [0, 0.5, 1], [0.2, 0.7, 0.4]);
   const titleY = useTransform(scrollYProgress, [0, 1], [22, -20]);
   const reelY = useTransform(scrollYProgress, [0, 1], [18, -22]);
+  const carouselX = useTransform(scrollYProgress, [0, 1], [-16, 16]);
+  const carouselY = useTransform(scrollYProgress, [0, 1], [18, -14]);
+  const [activeCase, setActiveCase] = useState(0);
 
   const rotateX = useTransform(pointerY, [-0.5, 0.5], [8, -8]);
   const rotateY = useTransform(pointerX, [-0.5, 0.5], [-10, 10]);
@@ -133,7 +136,7 @@ function FranchiseSection({
         ))}
       </div>
 
-      <div className="relative z-10 mx-auto grid w-full max-w-[1560px] gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+      <div className="relative z-10 mx-auto grid w-full max-w-[1560px] gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
         <motion.div style={{ y: titleY }} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}>
           <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/30 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-200">
             <Sparkles className="h-3 w-3" style={{ color: world.accent }} />
@@ -159,6 +162,39 @@ function FranchiseSection({
           )}
 
           <p className="mt-3 max-w-[60ch] text-base text-zinc-200/85 sm:text-lg">{world.subline} · {world.motionLabel}</p>
+
+          <div className="franchise-hero-meta-grid mt-6">
+            <div className="franchise-hero-meta-tile">
+              <p className="franchise-hero-meta-kicker">Review Score</p>
+              <p className="franchise-hero-meta-value">{world.reviewScore.toFixed(1)}</p>
+            </div>
+            <div className="franchise-hero-meta-tile">
+              <p className="franchise-hero-meta-kicker">Release Arc</p>
+              <p className="franchise-hero-meta-value">{world.releaseLabel}</p>
+            </div>
+            <div className="franchise-hero-meta-tile">
+              <p className="franchise-hero-meta-kicker">Collection Size</p>
+              <p className="franchise-hero-meta-value">{world.catalog.length} Entries</p>
+            </div>
+          </div>
+
+          <div className="franchise-hero-tag-row mt-4">
+            {world.genres.map((genre) => (
+              <span key={`${world.slug}-${genre}`} className="franchise-hero-tag" style={{ borderColor: `${world.accent}44` }}>
+                {genre}
+              </span>
+            ))}
+          </div>
+
+          <div className="franchise-hero-cta-row mt-6">
+            <button className="franchise-hero-cta franchise-hero-cta--primary" style={{ borderColor: `${world.accent}7a` }}>
+              Watch Franchise
+            </button>
+            <button className="franchise-hero-cta">Explore Collection</button>
+            <button className="franchise-hero-cta franchise-hero-cta--icon">
+              <Play className="h-3.5 w-3.5" /> Trailer ansehen
+            </button>
+          </div>
 
           <motion.div className="franchise-live-row" style={{ y: reelY }}>
             <p className="franchise-live-label" style={{ color: `${world.accent}` }}>Live TMDB Covers</p>
@@ -198,19 +234,27 @@ function FranchiseSection({
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.65, delay: 0.08, ease: [0.23, 1, 0.32, 1] }}
         >
-          <motion.div className="franchise-case-core relative" style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}>
+          <motion.div className="franchise-case-core relative" style={{ rotateX, rotateY, x: carouselX, y: carouselY, transformStyle: "preserve-3d" }}>
             <div className="franchise-case-glow" style={{ background: `radial-gradient(circle at ${shineX} ${shineY}, ${world.glow}, transparent 58%)` }} />
 
-            {world.catalog.map((entry, i) => (
+            {world.catalog.map((entry, i) => {
+              const isActiveCase = i === activeCase;
+              return (
               <motion.article
                 key={`${world.slug}-${entry.title}`}
                 className="franchise-item-case"
                 style={{
-                  transform: `translate3d(${i * 10}px, ${i * 10}px, ${-i * 24}px) rotateZ(${(i % 2 === 0 ? -1 : 1) * 0.45}deg)`,
+                  transform: `translate3d(${i * 46}px, ${i * 8}px, ${-i * 42}px) rotateY(${-18 + i * 3}deg) rotateZ(${(i % 2 === 0 ? -1 : 1) * 0.45}deg)`,
                   borderColor: `${world.accent}55`
                 }}
-                whileHover={{ x: 16, y: -4, z: 24, rotateZ: 0.5 }}
+                whileHover={{ x: 22, y: -8, z: 42, rotateY: 0, rotateZ: 0.6, scale: 1.03 }}
                 transition={{ type: "spring", stiffness: 260, damping: 22 }}
+                onHoverStart={() => setActiveCase(i)}
+                animate={
+                  isActiveCase
+                    ? { scale: 1.04, z: 44, x: 12, boxShadow: `0 28px 46px -28px ${world.glow}` }
+                    : { scale: 1, z: 0, x: 0, boxShadow: "0 12px 24px -18px rgba(0,0,0,0.78)" }
+                }
               >
                 {assets.catalog[i]?.posterUrl && (
                   <div className="franchise-item-thumbnail">
@@ -230,8 +274,10 @@ function FranchiseSection({
                   <p className="franchise-item-title">{entry.title}</p>
                   <p className="franchise-item-year">{entry.year}</p>
                 </div>
+                <div className="franchise-item-holo" />
               </motion.article>
-            ))}
+              );
+            })}
           </motion.div>
         </motion.div>
       </div>

@@ -14,6 +14,7 @@ export type FranchiseWorldDef = {
   slug: string;
   title: string;
   subline: string;
+  heroSource: { type: "movie" | "tv"; tmdbId: number; title: string; year?: number };
   /** Primary TMDB lookup config */
   tmdb: FranchiseTmdbConfig;
   /** Fallback local bg image if TMDB unavailable */
@@ -30,6 +31,10 @@ export type FranchiseWorldDef = {
   tone: string;
   /** CSS rgba string for the radial atmosphere layer */
   atmosphere: string;
+  /** Showcase metadata for hero panel */
+  reviewScore: number;
+  genres: string[];
+  releaseLabel: string;
   /** Individual catalog entries */
   catalog: { title: string; year: number; type: "Film" | "Serie"; searchTitle?: string }[];
 };
@@ -39,6 +44,7 @@ export const franchiseWorlds: FranchiseWorldDef[] = [
     slug: "john-wick",
     title: "John Wick",
     subline: "Neon Rain Archive",
+    heroSource: { type: "movie", tmdbId: 245891, title: "John Wick", year: 2014 },
     tmdb: { strategy: "collection", collectionId: 404609, fallbackTitle: "John Wick" },
     bgFallback: "/c/header.jpg",
     motionLabel: "Rain, shell glare, city pulse",
@@ -47,6 +53,9 @@ export const franchiseWorlds: FranchiseWorldDef[] = [
     mist: "radial-gradient(circle at 14% 18%, rgba(225,29,72,0.26), transparent 48%), radial-gradient(circle at 88% 12%, rgba(59,130,246,0.2), transparent 42%)",
     tone: "rgba(124, 58, 237, 0.18)",
     atmosphere: "rgba(225, 29, 72, 0.24)",
+    reviewScore: 8.7,
+    genres: ["Action", "Neo-Noir", "Crime"],
+    releaseLabel: "2014 - 2023",
     catalog: [
       { title: "Chapter 1", year: 2014, type: "Film", searchTitle: "John Wick" },
       { title: "Chapter 2", year: 2017, type: "Film", searchTitle: "John Wick: Chapter 2" },
@@ -58,6 +67,7 @@ export const franchiseWorlds: FranchiseWorldDef[] = [
     slug: "harry-potter",
     title: "Harry Potter",
     subline: "Wizarding Vault",
+    heroSource: { type: "movie", tmdbId: 671, title: "Harry Potter and the Philosopher's Stone", year: 2001 },
     tmdb: { strategy: "collection", collectionId: 1241, fallbackTitle: "Harry Potter" },
     bgFallback: "/c/lost-wallpaper.png",
     motionLabel: "Fog, sparks, magical streaks",
@@ -66,6 +76,9 @@ export const franchiseWorlds: FranchiseWorldDef[] = [
     mist: "radial-gradient(circle at 18% 20%, rgba(147,197,253,0.25), transparent 44%), radial-gradient(circle at 84% 12%, rgba(250,204,21,0.2), transparent 40%)",
     tone: "rgba(30, 64, 175, 0.2)",
     atmosphere: "rgba(245, 158, 11, 0.2)",
+    reviewScore: 8.4,
+    genres: ["Fantasy", "Adventure", "Mystery"],
+    releaseLabel: "2001 - 2011",
     catalog: [
       { title: "Stein der Weisen", year: 2001, type: "Film", searchTitle: "Harry Potter and the Philosopher's Stone" },
       { title: "Kammer des Schreckens", year: 2002, type: "Film", searchTitle: "Harry Potter and the Chamber of Secrets" },
@@ -77,6 +90,7 @@ export const franchiseWorlds: FranchiseWorldDef[] = [
     slug: "star-wars",
     title: "Star Wars",
     subline: "Galactic Chronicle Deck",
+    heroSource: { type: "movie", tmdbId: 11, title: "Star Wars", year: 1977 },
     tmdb: { strategy: "collection", collectionId: 10, fallbackTitle: "Star Wars" },
     bgFallback: "/c/header.jpg",
     motionLabel: "Stars, warp lines, holo grid",
@@ -85,6 +99,9 @@ export const franchiseWorlds: FranchiseWorldDef[] = [
     mist: "radial-gradient(circle at 8% 8%, rgba(56,189,248,0.24), transparent 44%), radial-gradient(circle at 86% 18%, rgba(14,165,233,0.22), transparent 42%)",
     tone: "rgba(6, 182, 212, 0.18)",
     atmosphere: "rgba(56, 189, 248, 0.24)",
+    reviewScore: 8.9,
+    genres: ["Sci-Fi", "Adventure", "Space Opera"],
+    releaseLabel: "1977 - heute",
     catalog: [
       { title: "A New Hope", year: 1977, type: "Film", searchTitle: "Star Wars" },
       { title: "The Empire Strikes Back", year: 1980, type: "Film", searchTitle: "Star Wars: Episode V - The Empire Strikes Back" },
@@ -96,6 +113,7 @@ export const franchiseWorlds: FranchiseWorldDef[] = [
     slug: "horror-archive",
     title: "Saw + Alien",
     subline: "Horror Evidence Room",
+    heroSource: { type: "movie", tmdbId: 348, title: "Alien", year: 1979 },
     tmdb: { strategy: "movie", tmdbId: 176, title: "Saw" },
     bgFallback: "/c/lost-wallpaper.png",
     motionLabel: "Glitch grain, shadows, pulse flicker",
@@ -104,6 +122,9 @@ export const franchiseWorlds: FranchiseWorldDef[] = [
     mist: "radial-gradient(circle at 16% 22%, rgba(239,68,68,0.2), transparent 44%), radial-gradient(circle at 88% 18%, rgba(34,197,94,0.14), transparent 38%)",
     tone: "rgba(153, 27, 27, 0.2)",
     atmosphere: "rgba(5, 150, 105, 0.2)",
+    reviewScore: 8.1,
+    genres: ["Horror", "Thriller", "Sci-Fi"],
+    releaseLabel: "1979 - 2024",
     catalog: [
       { title: "Saw", year: 2004, type: "Film", searchTitle: "Saw" },
       { title: "Saw II", year: 2005, type: "Film", searchTitle: "Saw II" },
@@ -115,6 +136,7 @@ export const franchiseWorlds: FranchiseWorldDef[] = [
     slug: "anime-sea",
     title: "Naruto + One Piece",
     subline: "Shonen Collector Dock",
+    heroSource: { type: "tv", tmdbId: 37854, title: "One Piece", year: 1999 },
     tmdb: { strategy: "tv", tmdbId: 46260, title: "Naruto" },
     bgFallback: "/c/header.jpg",
     motionLabel: "Ink trails, speed lines, drifting embers",
@@ -123,6 +145,9 @@ export const franchiseWorlds: FranchiseWorldDef[] = [
     mist: "radial-gradient(circle at 12% 16%, rgba(59,130,246,0.24), transparent 48%), radial-gradient(circle at 88% 14%, rgba(251,146,60,0.22), transparent 42%)",
     tone: "rgba(37, 99, 235, 0.2)",
     atmosphere: "rgba(251, 146, 60, 0.24)",
+    reviewScore: 8.8,
+    genres: ["Anime", "Adventure", "Shonen"],
+    releaseLabel: "1999 - heute",
     catalog: [
       { title: "Naruto", year: 2002, type: "Serie", searchTitle: "Naruto" },
       { title: "Naruto Shippuden", year: 2007, type: "Serie", searchTitle: "Naruto: Shippuden" },
