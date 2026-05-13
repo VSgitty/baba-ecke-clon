@@ -15,7 +15,7 @@ export function CinematicSideReels() {
   const [activeAccent, setActiveAccent] = useState(DEFAULT_ACCENT);
   const [activeGlow, setActiveGlow] = useState("rgba(245, 176, 52, 0.14)");
   const [visible, setVisible] = useState(false);
-  const [pastCatalog, setPastCatalog] = useState(false);
+  const [railTop, setRailTop] = useState<number>(0);
   const [gutterWidth, setGutterWidth] = useState(0);
 
   const scrollY = useMotionValue(0);
@@ -65,30 +65,33 @@ export function CinematicSideReels() {
       scrollVelocity.set(velocity);
     };
 
+    // Find start Y — use #reels-start sentinel (below hero) or fallback to 0 for /franchises
+    const measureRailTop = () => {
+      const sentinel = document.getElementById("reels-start");
+      if (sentinel) {
+        // getBoundingClientRect().top = viewport-relative Y — correct for a fixed-positioned child
+        const top = sentinel.getBoundingClientRect().top;
+        setRailTop(Math.max(0, top));
+      } else {
+        setRailTop(0);
+      }
+    };
+
     let frame = 0;
     const tick = () => {
       updateFromScroll();
       frame = window.requestAnimationFrame(tick);
     };
 
-    recalcGutter();
-    frame = window.requestAnimationFrame(tick);
-    window.addEventListener("resize", recalcGutter);
+    const handleResize = () => { recalcGutter(); measureRailTop(); };
 
-    // Show reels immediately if no catalog sentinel exists (e.g. /franchises page)
-    const sentinel = document.getElementById("catalog-end");
-    if (!sentinel) {
-      setPastCatalog(true);
-    } else {
-      const sentinelObserver = new IntersectionObserver(
-        ([entry]) => { if (entry.isIntersecting) { setPastCatalog(true); sentinelObserver.disconnect(); } },
-        { rootMargin: "0px 0px -10% 0px", threshold: 0 }
-      );
-      sentinelObserver.observe(sentinel);
-    }
+    recalcGutter();
+    measureRailTop();
+    frame = window.requestAnimationFrame(tick);
+    window.addEventListener("resize", handleResize);
 
     return () => {
-      window.removeEventListener("resize", recalcGutter);
+      window.removeEventListener("resize", handleResize);
       window.cancelAnimationFrame(frame);
     };
   }, [scrollVelocity, scrollY]);
@@ -119,11 +122,11 @@ export function CinematicSideReels() {
     return () => observer.disconnect();
   }, [accentMap]);
 
-  if (!visible || !pastCatalog) return null;
+  if (!visible) return null;
 
   return (
     <div className="cinematic-side-reels" aria-hidden="true">
-      <div className="cinematic-side-reels__rail cinematic-side-reels__rail--left" style={{ width: gutterWidth }}>
+      <div className="cinematic-side-reels__rail cinematic-side-reels__rail--left" style={{ width: gutterWidth, top: railTop }}>
         <motion.div className="cinematic-side-reels__strip-shell" style={{ width: stripWidth, boxShadow: `inset 0 0 0 1px ${activeAccent}2d, 0 0 22px ${activeGlow}` }}>
           <motion.div className="cinematic-side-reels__strip-run" style={{ y: reelShift }}>
             <div className="cinematic-side-reels__strip-pattern" />
@@ -134,7 +137,7 @@ export function CinematicSideReels() {
         <motion.div className="cinematic-side-reels__spool cinematic-side-reels__spool--bottom" style={{ rotate: spoolRotate, borderColor: activeAccent }} />
       </div>
 
-      <div className="cinematic-side-reels__rail cinematic-side-reels__rail--right" style={{ width: gutterWidth }}>
+      <div className="cinematic-side-reels__rail cinematic-side-reels__rail--right" style={{ width: gutterWidth, top: railTop }}>
         <motion.div className="cinematic-side-reels__strip-shell" style={{ width: stripWidth, boxShadow: `inset 0 0 0 1px ${activeAccent}2d, 0 0 22px ${activeGlow}` }}>
           <motion.div className="cinematic-side-reels__strip-run" style={{ y: reelReverseShift }}>
             <div className="cinematic-side-reels__strip-pattern cinematic-side-reels__strip-pattern--reverse" />

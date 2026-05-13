@@ -32,10 +32,10 @@ export default async function HomePage() {
       />
 
         <HeroSection />
+        <div id="reels-start" />
         <CineTicker />
       <FeatureGrid />
       <CineDashboard catalog={catalog} />
-      <div id="catalog-end" />
       <TestimonialsSection />
       <FaqSection />
       <CtaBanner />
