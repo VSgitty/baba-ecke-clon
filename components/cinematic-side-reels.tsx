@@ -54,12 +54,13 @@ export function CinematicSideReels() {
       setVisible(window.innerWidth >= 1180 && rawGutter >= 58);
     };
 
-    // Store the document-relative offset of the ticker (stable, doesn't change with scroll)
+    // Store the document-relative offset of the ticker end (stable, doesn't change with scroll)
     let tickerDocumentTop = 0;
     const measureTickerOffset = () => {
       const ticker = document.getElementById("cine-ticker-root");
       if (ticker) {
-        tickerDocumentTop = ticker.getBoundingClientRect().top + window.scrollY;
+        const rect = ticker.getBoundingClientRect();
+        tickerDocumentTop = rect.bottom + window.scrollY;
       } else {
         tickerDocumentTop = 0; // /franchises page: start from very top
       }

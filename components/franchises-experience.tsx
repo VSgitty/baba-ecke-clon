@@ -102,7 +102,7 @@ function FranchiseSection({
             src={assets.hero.backdropUrl}
             alt={`${world.title} cinematic backdrop`}
             fill
-            className="object-cover opacity-55"
+            className="object-cover opacity-80 saturate-125 contrast-110"
             sizes="100vw"
             priority={index === 0}
           />
@@ -214,10 +214,10 @@ function FranchiseSection({
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: "-60px" }}
                     transition={{ delay: i * 0.06, duration: 0.32 }}
-                    style={{ borderColor: `${world.accent}66` }}
+                    style={{ borderColor: `${world.accent}88`, boxShadow: `0 16px 30px -20px ${world.glow}` }}
                   >
                     {posterUrl ? (
-                      <Image src={posterUrl} alt={`${entry.title} cover`} fill className="object-cover" sizes="(max-width: 1024px) 90px, 120px" />
+                      <Image src={posterUrl} alt={`${entry.title} cover`} fill className="object-cover scale-[1.03]" sizes="(max-width: 1024px) 90px, 120px" />
                     ) : (
                       <div className="franchise-cover-fallback">{entry.title}</div>
                     )}
@@ -248,15 +248,15 @@ function FranchiseSection({
                 key={`${world.slug}-${entry.title}`}
                 className="franchise-item-case"
                 style={{
-                  transform: `translate3d(${i * 46}px, ${i * 8}px, ${-i * 42}px) rotateY(${-18 + i * 3}deg) rotateZ(${(i % 2 === 0 ? -1 : 1) * 0.45}deg)`,
+                  transform: `translate3d(${i * 34}px, ${i * 18}px, ${-i * 34}px) rotateY(${-14 + i * 4}deg) rotateZ(${(i % 2 === 0 ? -1 : 1) * 0.55}deg)`,
                   borderColor: `${world.accent}55`
                 }}
-                whileHover={{ x: 22, y: -8, z: 42, rotateY: 0, rotateZ: 0.6, scale: 1.03 }}
+                whileHover={{ x: 18, y: -14, z: 48, rotateY: 0, rotateZ: 0.8, scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 260, damping: 22 }}
                 onHoverStart={() => setActiveCase(i)}
                 animate={
                   isActiveCase
-                    ? { scale: 1.04, z: 44, x: 12, boxShadow: `0 28px 46px -28px ${world.glow}` }
+                    ? { scale: 1.07, z: 54, x: 16, y: -6, boxShadow: `0 34px 56px -26px ${world.glow}` }
                     : { scale: 1, z: 0, x: 0, boxShadow: "0 12px 24px -18px rgba(0,0,0,0.78)" }
                 }
               >
