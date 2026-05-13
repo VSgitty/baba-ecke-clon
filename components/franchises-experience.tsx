@@ -52,8 +52,8 @@ function FranchiseSection({
   const catalogLength = world.catalog.length;
   const autoplayBeat = useRef(0);
 
-  const rotateX = useTransform(pointerY, [-0.5, 0.5], [8, -8]);
-  const rotateY = useTransform(pointerX, [-0.5, 0.5], [-10, 10]);
+  const rotateX = useTransform(pointerY, [-0.5, 0.5], [3, -3]);
+  const rotateY = useTransform(pointerX, [-0.5, 0.5], [-4, 4]);
   const shineX = useMotionTemplate`${useTransform(pointerX, [-0.5, 0.5], [15, 85])}%`;
   const shineY = useMotionTemplate`${useTransform(pointerY, [-0.5, 0.5], [20, 80])}%`;
 
@@ -130,7 +130,7 @@ function FranchiseSection({
       ref={sectionRef}
       id={`franchise-section-${world.slug}`}
       data-franchise-slug={world.slug}
-      className="franchise-world relative isolate min-h-[94svh] overflow-clip px-4 pb-12 pt-24 sm:px-7 lg:px-10 lg:pb-10 lg:pt-36"
+      className="franchise-world relative isolate flex min-h-[94svh] flex-col overflow-clip px-4 pb-16 pt-20 sm:px-7 lg:px-10 lg:pb-14 lg:pt-28"
       style={{
         background: assets.hero.backdropUrl
           ? `linear-gradient(160deg, ${world.tone}, rgba(2,6,14,0.92) 38%, rgba(2,4,10,0.98)), radial-gradient(circle at 50% 10%, ${world.atmosphere}, transparent 58%)`
@@ -182,34 +182,44 @@ function FranchiseSection({
         ))}
       </div>
 
-      <div className="relative z-10 mx-auto grid w-full max-w-[1560px] gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
-        <motion.div style={{ y: titleY }} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}>
-          <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/30 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-200">
-            <Sparkles className="h-3 w-3" style={{ color: world.accent }} />
-            Franchise Museum: {String(index + 1).padStart(2, "0")}
-          </p>
+      {/* ── TOP: Title / Logo ─────────────────────────────── */}
+      <motion.div
+        className="relative z-10 mx-auto w-full max-w-[1560px]"
+        style={{ y: titleY }}
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+      >
+        <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/30 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-200">
+          <Sparkles className="h-3 w-3" style={{ color: world.accent }} />
+          Franchise Museum: {String(index + 1).padStart(2, "0")}
+        </p>
+        {assets.hero.logoUrl ? (
+          <div className="max-w-[600px]">
+            <Image
+              src={assets.hero.logoUrl}
+              alt={`${world.title} logo`}
+              width={600}
+              height={200}
+              className="h-auto max-h-[160px] w-auto object-contain object-left drop-shadow-[0_8px_28px_rgba(0,0,0,0.8)] sm:max-h-[200px] lg:max-h-[220px]"
+              unoptimized={assets.hero.logoUrl.endsWith(".svg")}
+            />
+          </div>
+        ) : (
+          <h2 className="font-display text-6xl leading-[0.92] text-zinc-100 drop-shadow-[0_8px_24px_rgba(0,0,0,0.65)] sm:text-8xl lg:text-[7rem]">
+            {world.title}
+          </h2>
+        )}
+      </motion.div>
 
-          {/* TMDB Logo PNG if available, else plain title */}
-          {assets.hero.logoUrl ? (
-            <div className="my-3 max-w-[480px]">
-              <Image
-                src={assets.hero.logoUrl}
-                alt={`${world.title} logo`}
-                width={480}
-                height={160}
-                className="h-auto max-h-[120px] w-auto object-contain object-left drop-shadow-[0_6px_22px_rgba(0,0,0,0.75)] sm:max-h-[148px]"
-                unoptimized={assets.hero.logoUrl.endsWith(".svg")}
-              />
-            </div>
-          ) : (
-            <h2 className="font-display text-5xl leading-[0.95] text-zinc-100 drop-shadow-[0_8px_24px_rgba(0,0,0,0.65)] sm:text-7xl lg:text-8xl">
-              {world.title}
-            </h2>
-          )}
+      {/* ── BOTTOM: Meta + Carousel ───────────────────────── */}
+      <div className="relative z-10 mt-auto">
+      <div className="mx-auto grid w-full max-w-[1560px] gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}>
+          <p className="mb-4 max-w-[60ch] text-base text-zinc-200/80 sm:text-lg">{world.subline} · {world.motionLabel}</p>
 
-          <p className="mt-3 max-w-[60ch] text-base text-zinc-200/85 sm:text-lg">{world.subline} · {world.motionLabel}</p>
-
-          <div className="franchise-hero-meta-grid mt-6">
+          <div className="franchise-hero-meta-grid">
             <div className="franchise-hero-meta-tile">
               <p className="franchise-hero-meta-kicker">Review Score</p>
               <p className="franchise-hero-meta-value">{world.reviewScore.toFixed(1)}</p>
@@ -271,7 +281,7 @@ function FranchiseSection({
         </motion.div>
 
         <motion.div
-          className="franchise-case-shell group relative mx-auto w-full max-w-[540px]"
+          className="franchise-case-shell group relative mx-auto w-full max-w-[500px] self-end"
           onMouseMove={onMove}
           onMouseLeave={() => {
             onLeave();
@@ -292,11 +302,11 @@ function FranchiseSection({
               const absDelta = Math.abs(delta);
               const isActiveCase = absDelta === 0;
               const posterUrl = assets.catalog[i]?.posterUrl;
-              const spread = delta * 106;
-              const lift = isActiveCase ? -14 : absDelta === 1 ? 8 : 22;
-              const depth = isActiveCase ? 0 : absDelta === 1 ? -75 : -130;
-              const scale = isActiveCase ? 1 : absDelta === 1 ? 0.88 : 0.76;
-              const rotate = delta * -30;
+              const spread = delta * 94;
+              const lift = isActiveCase ? -10 : absDelta === 1 ? 10 : 22;
+              const depth = isActiveCase ? 0 : absDelta === 1 ? -55 : -110;
+              const scale = isActiveCase ? 1 : absDelta === 1 ? 0.87 : 0.74;
+              const rotate = delta * -22;
 
               return (
               <motion.button
@@ -305,8 +315,10 @@ function FranchiseSection({
                 className="franchise-coverflow-card"
                 style={{
                   zIndex: 100 - absDelta,
-                  borderColor: isActiveCase ? `${world.accent}cc` : `${world.accent}66`,
-                  boxShadow: isActiveCase ? `0 34px 60px -22px ${world.glow}` : "0 16px 34px -22px rgba(0,0,0,0.84)"
+                  borderColor: isActiveCase ? `${world.accent}ee` : `${world.accent}44`,
+                  boxShadow: isActiveCase
+                    ? `0 0 0 1px ${world.accent}44, 0 28px 56px -10px ${world.glow}, 0 60px 80px -30px ${world.glow}88, inset 0 1px 0 rgba(255,255,255,0.14)`
+                    : `0 12px 28px -10px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05)`
                 }}
                 initial={false}
                 animate={
@@ -346,42 +358,46 @@ function FranchiseSection({
               </motion.button>
               );
             })}
-
-            <div className="franchise-coverflow-controls">
-              <button
-                type="button"
-                className="franchise-coverflow-nav"
-                onClick={() => goToCase(activeCase - 1)}
-                aria-label="Vorheriges Cover"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-
-              <div className="franchise-coverflow-dots" role="tablist" aria-label={`${world.title} Coverflow Position`}>
-                {world.catalog.map((entry, i) => (
-                  <button
-                    key={`${world.slug}-dot-${entry.title}`}
-                    type="button"
-                    className="franchise-coverflow-dot"
-                    onClick={() => goToCase(i)}
-                    aria-label={`${entry.title} zentrieren`}
-                    aria-current={i === activeCase ? "true" : undefined}
-                    style={{ background: i === activeCase ? world.accent : "rgba(226,232,240,0.32)", boxShadow: i === activeCase ? `0 0 10px ${world.accent}bb` : "none" }}
-                  />
-                ))}
-              </div>
-
-              <button
-                type="button"
-                className="franchise-coverflow-nav"
-                onClick={() => goToCase(activeCase + 1)}
-                aria-label="Nächstes Cover"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
           </motion.div>
+
+          {/* Controls sit OUTSIDE the 3D core so they never overlap cards */}
+          <div className="franchise-coverflow-controls">
+            <button
+              type="button"
+              className="franchise-coverflow-nav"
+              onClick={() => goToCase(activeCase - 1)}
+              aria-label="Vorheriges Cover"
+              style={{ borderColor: `${world.accent}55`, boxShadow: `0 0 18px ${world.glow}66` }}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+
+            <div className="franchise-coverflow-dots" role="tablist" aria-label={`${world.title} Coverflow Position`}>
+              {world.catalog.map((entry, i) => (
+                <button
+                  key={`${world.slug}-dot-${entry.title}`}
+                  type="button"
+                  className="franchise-coverflow-dot"
+                  onClick={() => goToCase(i)}
+                  aria-label={`${entry.title} zentrieren`}
+                  aria-current={i === activeCase ? "true" : undefined}
+                  style={{ background: i === activeCase ? world.accent : "rgba(226,232,240,0.22)", boxShadow: i === activeCase ? `0 0 14px ${world.accent}dd` : "none", transform: i === activeCase ? "scale(1.4)" : "scale(1)" }}
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className="franchise-coverflow-nav"
+              onClick={() => goToCase(activeCase + 1)}
+              aria-label="Nächstes Cover"
+              style={{ borderColor: `${world.accent}55`, boxShadow: `0 0 18px ${world.glow}66` }}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </motion.div>
+      </div>
       </div>
 
       <motion.div

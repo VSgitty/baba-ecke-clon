@@ -1342,7 +1342,7 @@ h3,
 
 .franchise-case-core {
   position: relative;
-  min-height: 430px;
+  min-height: 500px;
   border-radius: 18px;
   border: none;
   background: transparent;
@@ -1354,10 +1354,10 @@ h3,
 
 .franchise-case-glow {
   position: absolute;
-  inset: auto -18% -8% -18%;
-  height: 82%;
-  filter: blur(28px);
-  opacity: 0.9;
+  inset: auto -28% -12% -28%;
+  height: 90%;
+  filter: blur(48px);
+  opacity: 0.75;
   pointer-events: none;
   z-index: 0;
 }
@@ -1430,15 +1430,15 @@ h3,
 .franchise-coverflow-floor {
   position: absolute;
   left: 50%;
-  bottom: -32px;
-  width: 78%;
-  height: 42px;
+  bottom: -38px;
+  width: 90%;
+  height: 52px;
   transform: translateX(-50%);
   pointer-events: none;
   background:
-    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.22), rgba(56, 189, 248, 0.14) 40%, transparent 74%),
-    radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55), transparent 80%);
-  filter: blur(10px);
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.28), rgba(56, 189, 248, 0.18) 40%, transparent 74%),
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0.65), transparent 80%);
+  filter: blur(14px);
 }
 
 .franchise-item-type {
@@ -1482,26 +1482,30 @@ h3,
 }
 
 .franchise-coverflow-controls {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -4px;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.62rem;
+  margin-top: 2.4rem;
   z-index: 140;
 }
 
 .franchise-coverflow-nav {
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   display: grid;
   place-items: center;
   color: rgba(226, 232, 240, 0.92);
   background: rgba(4, 8, 16, 0.72);
+  backdrop-filter: blur(8px);
+  transition: background 0.2s, transform 0.15s;
+}
+.franchise-coverflow-nav:hover {
+  background: rgba(10, 18, 36, 0.92);
+  transform: scale(1.1);
 }
 
 .franchise-coverflow-dots {
@@ -1512,10 +1516,12 @@ h3,
 }
 
 .franchise-coverflow-dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
   border: none;
+  transition: transform 0.22s, box-shadow 0.22s;
+  cursor: pointer;
 }
 
 .franchise-transition-ribbon {
