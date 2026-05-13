@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+:root {
+  --background: 245 40% 99%;
+  --foreground: 222 24% 12%;
+  --muted: 210 30% 96%;
+  --muted-foreground: 220 10% 40%;
+  --border: 220 20% 90%;
+  --ring: 174 85% 34%;
+  --brand: #0f8c7a;
+  --brand-strong: #0b7466;
+  --brand-soft: #d8f3ee;
+  --brand-shadow: rgba(15, 140, 122, 0.42);
+}
+
+.dark {
+  --background: 222 30% 7%;
+  --foreground: 210 40% 96%;
+  --muted: 222 24% 12%;
+  --muted-foreground: 215 20% 70%;
+  --border: 222 18% 22%;
+  --ring: 174 85% 44%;
+  --brand: #1cb8a1;
+  --brand-strong: #32c9b3;
+  --brand-soft: rgba(28, 184, 161, 0.15);
+  --brand-shadow: rgba(28, 184, 161, 0.5);
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-border: hsl(var(--border));
+  --color-ring: hsl(var(--ring));
+}
+
+* {
+  @apply border-border;
+}
+
+html,
+body {
+  @apply bg-background text-foreground antialiased;
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 10% -10%, rgba(15, 140, 122, 0.15), transparent 35%),
+    radial-gradient(circle at 95% 0%, rgba(93, 111, 255, 0.14), transparent 30%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.7), rgba(248, 250, 255, 0.9));
+  background-attachment: fixed;
+}
+
+.dark body {
+  background-image:
+    radial-gradient(circle at 10% -10%, rgba(28, 184, 161, 0.18), transparent 35%),
+    radial-gradient(circle at 95% 0%, rgba(93, 111, 255, 0.18), transparent 30%),
+    linear-gradient(180deg, #090b12, #0b1220 50%, #0a0f1a);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--brand) 35%, white);
+}
+
+@keyframes float-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+.animate-float-in {
+  animation: float-in 0.7s ease-out both;
+}
+
+.data-\[state\=open\]\:animate-accordion-down[data-state="open"] {
+  animation: accordion-down 0.2s ease-out;
+}
+
+.data-\[state\=closed\]\:animate-accordion-up[data-state="closed"] {
+  animation: accordion-up 0.2s ease-out;
+}
