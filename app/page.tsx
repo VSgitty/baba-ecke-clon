@@ -1,6 +1,6 @@
 import Script from "next/script";
 
-import { getCatalogItems } from "@/lib/catalog";
+import { getEnrichedCatalogItems } from "@/lib/catalog";
 import { HeroSection } from "@/components/hero-section";
 import { CineTicker } from "@/components/cine-ticker";
 import { FeatureGrid } from "@/components/feature-grid";
@@ -10,7 +10,7 @@ import { FaqSection } from "@/components/faq-section";
 import { CtaBanner } from "@/components/cta-banner";
 
 export default function HomePage() {
-  const catalog = getCatalogItems(140);
+  const catalog = await getEnrichedCatalogItems(140);
 
   const schema = {
     "@context": "https://schema.org",

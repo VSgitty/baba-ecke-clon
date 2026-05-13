@@ -5,123 +5,22 @@ import { AnimatePresence, motion, useMotionTemplate, useMotionValue, useScroll, 
 import { ChevronDown, Clapperboard, Layers3, LibraryBig, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type FranchiseWorld = {
-  slug: string;
-  title: string;
-  subline: string;
-  tone: string;
-  atmosphere: string;
-  accent: string;
-  glow: string;
-  mist: string;
-  bgImage: string;
-  motionLabel: string;
-  catalog: { title: string; year: number; type: "Film" | "Serie" }[];
-};
+import { franchiseWorlds, type FranchiseWorldDef } from "@/data/franchise-worlds";
+import type { TmdbAssets } from "@/lib/tmdb";
 
-const worlds: FranchiseWorld[] = [
-  {
-    slug: "john-wick",
-    title: "John Wick",
-    subline: "Neon Rain Archive",
-    tone: "rgba(124, 58, 237, 0.18)",
-    atmosphere: "rgba(225, 29, 72, 0.24)",
-    accent: "#f97316",
-    glow: "rgba(249, 115, 22, 0.42)",
-    mist: "radial-gradient(circle at 14% 18%, rgba(225,29,72,0.26), transparent 48%), radial-gradient(circle at 88% 12%, rgba(59,130,246,0.2), transparent 42%)",
-    bgImage: "/c/header.jpg",
-    motionLabel: "Rain, shell glare, city pulse",
-    catalog: [
-      { title: "Chapter 1", year: 2014, type: "Film" },
-      { title: "Chapter 2", year: 2017, type: "Film" },
-      { title: "Chapter 3", year: 2019, type: "Film" },
-      { title: "Chapter 4", year: 2023, type: "Film" }
-    ]
-  },
-  {
-    slug: "harry-potter",
-    title: "Harry Potter",
-    subline: "Wizarding Vault",
-    tone: "rgba(30, 64, 175, 0.2)",
-    atmosphere: "rgba(245, 158, 11, 0.2)",
-    accent: "#fbbf24",
-    glow: "rgba(251, 191, 36, 0.4)",
-    mist: "radial-gradient(circle at 18% 20%, rgba(147,197,253,0.25), transparent 44%), radial-gradient(circle at 84% 12%, rgba(250,204,21,0.2), transparent 40%)",
-    bgImage: "/c/lost-wallpaper.png",
-    motionLabel: "Fog, sparks, magical streaks",
-    catalog: [
-      { title: "Stein der Weisen", year: 2001, type: "Film" },
-      { title: "Kammer des Schreckens", year: 2002, type: "Film" },
-      { title: "Gefangener von Askaban", year: 2004, type: "Film" },
-      { title: "Feuerkelch", year: 2005, type: "Film" }
-    ]
-  },
-  {
-    slug: "star-wars",
-    title: "Star Wars",
-    subline: "Galactic Chronicle Deck",
-    tone: "rgba(6, 182, 212, 0.18)",
-    atmosphere: "rgba(56, 189, 248, 0.24)",
-    accent: "#22d3ee",
-    glow: "rgba(34, 211, 238, 0.38)",
-    mist: "radial-gradient(circle at 8% 8%, rgba(56,189,248,0.24), transparent 44%), radial-gradient(circle at 86% 18%, rgba(14,165,233,0.22), transparent 42%)",
-    bgImage: "/c/header.jpg",
-    motionLabel: "Stars, warp lines, holo grid",
-    catalog: [
-      { title: "A New Hope", year: 1977, type: "Film" },
-      { title: "The Empire Strikes Back", year: 1980, type: "Film" },
-      { title: "The Clone Wars", year: 2008, type: "Serie" },
-      { title: "The Mandalorian", year: 2019, type: "Serie" }
-    ]
-  },
-  {
-    slug: "horror-archive",
-    title: "Saw + Alien",
-    subline: "Horror Evidence Room",
-    tone: "rgba(153, 27, 27, 0.2)",
-    atmosphere: "rgba(5, 150, 105, 0.2)",
-    accent: "#ef4444",
-    glow: "rgba(239, 68, 68, 0.35)",
-    mist: "radial-gradient(circle at 16% 22%, rgba(239,68,68,0.2), transparent 44%), radial-gradient(circle at 88% 18%, rgba(34,197,94,0.14), transparent 38%)",
-    bgImage: "/c/lost-wallpaper.png",
-    motionLabel: "Glitch grain, shadows, pulse flicker",
-    catalog: [
-      { title: "Saw", year: 2004, type: "Film" },
-      { title: "Saw II", year: 2005, type: "Film" },
-      { title: "Alien", year: 1979, type: "Film" },
-      { title: "Alien: Romulus", year: 2024, type: "Film" }
-    ]
-  },
-  {
-    slug: "anime-sea",
-    title: "Naruto + One Piece",
-    subline: "Shonen Collector Dock",
-    tone: "rgba(37, 99, 235, 0.2)",
-    atmosphere: "rgba(251, 146, 60, 0.24)",
-    accent: "#fb923c",
-    glow: "rgba(251, 146, 60, 0.42)",
-    mist: "radial-gradient(circle at 12% 16%, rgba(59,130,246,0.24), transparent 48%), radial-gradient(circle at 88% 14%, rgba(251,146,60,0.22), transparent 42%)",
-    bgImage: "/c/header.jpg",
-    motionLabel: "Ink trails, speed lines, drifting embers",
-    catalog: [
-      { title: "Naruto", year: 2002, type: "Serie" },
-      { title: "Naruto Shippuden", year: 2007, type: "Serie" },
-      { title: "One Piece", year: 1999, type: "Serie" },
-      { title: "One Piece Live Action", year: 2023, type: "Serie" }
-    ]
-  }
-];
 
 function FranchiseSection({
   world,
   index,
+  assets,
   isActive,
   isLast,
   registerRef,
   onScrollNext,
 }: {
-  world: FranchiseWorld;
+  world: FranchiseWorldDef;
   index: number;
+  assets: TmdbAssets;
   isActive: boolean;
   isLast: boolean;
   registerRef: (slug: string, el: HTMLElement | null) => void;
@@ -185,8 +84,16 @@ function FranchiseSection({
         background: `linear-gradient(160deg, ${world.tone}, rgba(2,6,14,0.92) 38%, rgba(2,4,10,0.98)), radial-gradient(circle at 50% 10%, ${world.atmosphere}, transparent 58%)`
       }}
     >
+      {/* Cinematic backdrop — TMDB or local fallback */}
       <motion.div className="absolute inset-0 z-0 scale-110" style={{ y: bgY }}>
-        <Image src={world.bgImage} alt={`${world.title} cinematic backdrop`} fill className="object-cover opacity-55" sizes="100vw" />
+        <Image
+          src={assets.backdropUrl ?? world.bgFallback}
+          alt={`${world.title} cinematic backdrop`}
+          fill
+          className="object-cover opacity-55"
+          sizes="100vw"
+          priority={index === 0}
+        />
       </motion.div>
 
       <motion.div className="absolute inset-0 z-[1]" style={{ y: hazeY, opacity: fogOpacity }}>
@@ -226,9 +133,25 @@ function FranchiseSection({
             <Sparkles className="h-3 w-3" style={{ color: world.accent }} />
             Franchise Museum: {String(index + 1).padStart(2, "0")}
           </p>
-          <h2 className="font-display text-5xl leading-[0.95] text-zinc-100 drop-shadow-[0_8px_24px_rgba(0,0,0,0.65)] sm:text-7xl lg:text-8xl">
-            {world.title}
-          </h2>
+
+          {/* TMDB Logo PNG if available, else plain title */}
+          {assets.logoUrl ? (
+            <div className="my-3 max-w-[480px]">
+              <Image
+                src={assets.logoUrl}
+                alt={`${world.title} logo`}
+                width={480}
+                height={160}
+                className="h-auto max-h-[120px] w-auto object-contain object-left drop-shadow-[0_6px_22px_rgba(0,0,0,0.75)] sm:max-h-[148px]"
+                unoptimized={assets.logoUrl.endsWith(".svg")}
+              />
+            </div>
+          ) : (
+            <h2 className="font-display text-5xl leading-[0.95] text-zinc-100 drop-shadow-[0_8px_24px_rgba(0,0,0,0.65)] sm:text-7xl lg:text-8xl">
+              {world.title}
+            </h2>
+          )}
+
           <p className="mt-3 max-w-[60ch] text-base text-zinc-200/85 sm:text-lg">{world.subline} · {world.motionLabel}</p>
 
           <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -268,6 +191,19 @@ function FranchiseSection({
                 whileHover={{ x: 16, y: -4, z: 24, rotateZ: 0.5 }}
                 transition={{ type: "spring", stiffness: 260, damping: 22 }}
               >
+                {/* Case poster thumbnail if first item has TMDB poster */}
+                {i === 0 && assets.posterUrl && (
+                  <div className="franchise-item-thumbnail">
+                    <Image
+                      src={assets.posterUrl}
+                      alt={entry.title}
+                      fill
+                      className="object-cover"
+                      sizes="80px"
+                    />
+                    <div className="franchise-item-thumbnail-overlay" />
+                  </div>
+                )}
                 <div className="franchise-item-spine" style={{ background: `linear-gradient(180deg, ${world.accent}55, rgba(10,12,20,0.75))` }} />
                 <div className="franchise-item-meta">
                   <p className="franchise-item-type">{entry.type}</p>
@@ -374,7 +310,7 @@ function FranchiseMiniMap({
   );
 }
 
-export function FranchisesExperience() {
+export function FranchisesExperience({ assetsMap }: { assetsMap: Record<string, TmdbAssets> }) {
   const [activeSlug, setActiveSlug] = useState<string | null>("intro");
   const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
   const introRef = useRef<HTMLElement | null>(null);
@@ -394,8 +330,8 @@ export function FranchisesExperience() {
   }, []);
 
   const scrollToNextWorld = useCallback((currentSlug: string) => {
-    const idx = worlds.findIndex((w) => w.slug === currentSlug);
-    const next = worlds[idx + 1];
+    const idx = franchiseWorlds.findIndex((w) => w.slug === currentSlug);
+    const next = franchiseWorlds[idx + 1];
     if (next) navigateTo(next.slug);
   }, [navigateTo]);
 
@@ -424,7 +360,7 @@ export function FranchisesExperience() {
 
   // Keyboard navigation (↑ / ↓)
   useEffect(() => {
-    const slugList = ["intro", ...worlds.map((w) => w.slug)];
+    const slugList = ["intro", ...franchiseWorlds.map((w) => w.slug)];
 
     function handleKey(e: KeyboardEvent) {
       if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
@@ -446,7 +382,7 @@ export function FranchisesExperience() {
   const miniMapItems: MiniMapItem[] = useMemo(
     () => [
       { slug: "intro", title: "Intro", accent: "#f5b034" },
-      ...worlds.map((w) => ({ slug: w.slug, title: w.title, accent: w.accent })),
+      ...franchiseWorlds.map((w) => ({ slug: w.slug, title: w.title, accent: w.accent })),
     ],
     []
   );
@@ -499,13 +435,14 @@ export function FranchisesExperience() {
       </header>
 
       <div className="space-y-0">
-        {worlds.map((world, index) => (
+        {franchiseWorlds.map((world, index) => (
           <FranchiseSection
             key={world.slug}
             world={world}
             index={index}
+            assets={assetsMap[world.slug] ?? { posterUrl: null, backdropUrl: null, logoUrl: null }}
             isActive={activeSlug === world.slug}
-            isLast={index === worlds.length - 1}
+            isLast={index === franchiseWorlds.length - 1}
             registerRef={registerSection}
             onScrollNext={() => scrollToNextWorld(world.slug)}
           />

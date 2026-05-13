@@ -60,3 +60,32 @@ export function getCatalogItems(limit = 120): CatalogItem[] {
     streamUrl: item.streamUrl
   }));
 }
+
+/**
+ * Server-side: returns catalog items and fills in missing posters via TMDB.
+ * Import this only from Server Components — it calls the TMDB API.
+ * Enrichment is batched (max `enrichLimit` items) and cached 24 h via Next.js fetch.
+ */
+export async function getEnrichedCatalogItems(limit = 120, enrichLimit = 30): Promise<CatalogItem[]> {
+  const items = getCatalogItems(limit);
+
+  // Lazy import keeps server-only code tree-shaken from client bundles
+  const { resolveItemPoster } = await import("@/lib/tmdb");
+
+  const missing = items.filter((i) => !i.poster).slice(0, enrichLimit);
+  if (missing.length === 0) return items;
+
+  const enriched = await Promise.allSettled(
+    missing.map((item) => resolveItemPoster(item.title, item.type, item.year))
+  );
+
+  const posterMap: Record<string, string | null> = {};
+  missing.forEach((item, idx) => {
+    const result = enriched[idx];
+    posterMap[item.id] = result?.status === "fulfilled" ? result.value : null;
+  });
+
+  return items.map((item) =>
+    posterMap[item.id] != null ? { ...item, poster: posterMap[item.id] as string } : item
+  );
+}

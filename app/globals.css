@@ -1030,6 +1030,19 @@ h3,
   z-index: 1;
 }
 
+.franchise-item-thumbnail {
+  position: relative;
+  width: 52px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.franchise-item-thumbnail-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(6, 9, 18, 0.0), rgba(6, 9, 18, 0.5));
+}
+
 .franchise-item-spine {
   width: 14px;
   border-right: 1px solid rgba(255, 255, 255, 0.16);
