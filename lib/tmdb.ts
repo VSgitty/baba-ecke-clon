@@ -36,13 +36,19 @@ async function tmdbFetch<T>(endpoint: string, params: Record<string, string> = {
   if (!key) return null;
 
   const url = new URL(`${API_BASE}${endpoint}`);
-  url.searchParams.set("api_key", key);
   for (const [k, v] of Object.entries(params)) {
     url.searchParams.set(k, v);
   }
 
+  // Support both v3 API keys (32-char hex) and v4 JWT Read Access Tokens
+  const isJwt = key.startsWith("eyJ");
+  const headers: Record<string, string> = isJwt
+    ? { Authorization: `Bearer ${key}`, Accept: "application/json" }
+    : {};
+  if (!isJwt) url.searchParams.set("api_key", key);
+
   try {
-    const res = await fetch(url.toString(), { next: { revalidate: 86400 } });
+    const res = await fetch(url.toString(), { headers, next: { revalidate: 86400 } });
     if (!res.ok) return null;
     return (await res.json()) as T;
   } catch {

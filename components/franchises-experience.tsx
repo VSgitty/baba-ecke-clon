@@ -90,20 +90,24 @@ function FranchiseSection({
       data-franchise-slug={world.slug}
       className="franchise-world relative isolate min-h-[94svh] overflow-clip px-4 py-12 sm:px-7 lg:px-10"
       style={{
-        background: `linear-gradient(160deg, ${world.tone}, rgba(2,6,14,0.92) 38%, rgba(2,4,10,0.98)), radial-gradient(circle at 50% 10%, ${world.atmosphere}, transparent 58%)`
+        background: assets.hero.backdropUrl
+          ? `linear-gradient(160deg, ${world.tone}, rgba(2,6,14,0.92) 38%, rgba(2,4,10,0.98)), radial-gradient(circle at 50% 10%, ${world.atmosphere}, transparent 58%)`
+          : `linear-gradient(145deg, ${world.tone} 0%, rgba(2,6,14,0.5) 30%, rgba(2,4,10,0.98) 100%), radial-gradient(ellipse 90% 60% at 50% 0%, ${world.atmosphere} 0%, transparent 62%), radial-gradient(ellipse 40% 38% at 80% 80%, ${world.glow}44, transparent 70%)`
       }}
     >
-      {/* Cinematic backdrop — TMDB or local fallback */}
-      <motion.div className="absolute inset-0 z-0 scale-110" style={{ y: bgY }}>
-        <Image
-          src={assets.hero.backdropUrl ?? world.bgFallback}
-          alt={`${world.title} cinematic backdrop`}
-          fill
-          className="object-cover opacity-55"
-          sizes="100vw"
-          priority={index === 0}
-        />
-      </motion.div>
+      {/* Cinematic backdrop — TMDB image when available, franchise gradient otherwise */}
+      {assets.hero.backdropUrl && (
+        <motion.div className="absolute inset-0 z-0 scale-110" style={{ y: bgY }}>
+          <Image
+            src={assets.hero.backdropUrl}
+            alt={`${world.title} cinematic backdrop`}
+            fill
+            className="object-cover opacity-55"
+            sizes="100vw"
+            priority={index === 0}
+          />
+        </motion.div>
+      )}
 
       <motion.div className="absolute inset-0 z-[1]" style={{ y: hazeY, opacity: fogOpacity }}>
         <div className="franchise-haze absolute inset-0" style={{ background: world.mist }} />
