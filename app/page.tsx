@@ -3,6 +3,7 @@ import Script from "next/script";
 import { getEnrichedCatalogItems } from "@/lib/catalog";
 import { HeroSection } from "@/components/hero-section";
 import { CineTicker } from "@/components/cine-ticker";
+import { CatalogSectionsGrid } from "@/components/catalog-sections-grid";
 import { FeatureGrid } from "@/components/feature-grid";
 import { CineDashboard } from "@/components/cine-dashboard";
 import { TestimonialsSection } from "@/components/testimonials-section";
@@ -42,6 +43,7 @@ export default async function HomePage() {
 
       <HeroSection />
       <CineTicker />
+      <CatalogSectionsGrid />
       <FeatureGrid />
       <CineDashboard catalog={catalog} />
       <TestimonialsSection />
