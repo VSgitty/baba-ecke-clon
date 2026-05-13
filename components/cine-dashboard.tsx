@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Clock3, Dice5, ExternalLink, Film, Filter, Flame, Play, Sparkles, Star } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -76,7 +76,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
   type InfoPos = { left: number; top: number; showLeft: boolean };
   const [hoveredItem, setHoveredItem] = useState<CatalogItem | null>(null);
   const [infoPos, setInfoPos] = useState<InfoPos | null>(null);
-  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 
   useEffect(() => {
     const rawWatchlist = window.localStorage.getItem(WATCHLIST_KEY);
@@ -247,9 +247,13 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
     setRoulettePick(filteredCatalog[index] ?? null);
   }
 
-  const handleCardEnter = useCallback((item: CatalogItem, event: React.MouseEvent<HTMLElement>) => {
-    if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
-    const rect = event.currentTarget.getBoundingClientRect();
+  const openInfoCard = useCallback((item: CatalogItem, anchor: HTMLElement) => {
+    if (hoveredItem?.id === item.id) {
+      setHoveredItem(null);
+      setInfoPos(null);
+      return;
+    }
+    const rect = anchor.getBoundingClientRect();
     const infoW = 272;
     const infoH = 404;
     const vw = window.innerWidth;
@@ -262,18 +266,45 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
     const top  = Math.max(8, Math.min(rect.top - verticalLift, vh - infoH - 8));
     setInfoPos({ left, top, showLeft });
     setHoveredItem(item);
+  }, [hoveredItem?.id]);
+
+  const handleCardClick = useCallback((item: CatalogItem, event: React.MouseEvent<HTMLElement>) => {
+    openInfoCard(item, event.currentTarget);
+  }, [openInfoCard]);
+
+  const handleCardKeyDown = useCallback((item: CatalogItem, event: React.KeyboardEvent<HTMLElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openInfoCard(item, event.currentTarget);
+    }
+  }, [openInfoCard]);
+
+  const closeInfoCard = useCallback(() => {
+    setHoveredItem(null);
+    setInfoPos(null);
   }, []);
 
-  const handleCardLeave = useCallback(() => {
-    leaveTimerRef.current = setTimeout(() => {
-      setHoveredItem(null);
-      setInfoPos(null);
-    }, 130);
-  }, []);
+  useEffect(() => {
+    function handleDocumentPointerDown(event: PointerEvent) {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest(".catalog-shelf-card") || target.closest(".info-card-float")) return;
+      closeInfoCard();
+    }
 
-  const cancelLeave = useCallback(() => {
-    if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
-  }, []);
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        closeInfoCard();
+      }
+    }
+
+    window.addEventListener("pointerdown", handleDocumentPointerDown);
+    window.addEventListener("keydown", handleEscape);
+    return () => {
+      window.removeEventListener("pointerdown", handleDocumentPointerDown);
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [closeInfoCard]);
 
   function handleCoverMove(event: React.MouseEvent<HTMLElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -586,10 +617,14 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                       {shelf.items.map((item, itemIndex) => (
                         <motion.article
                           key={item.id}
-                          className="cover-card catalog-shelf-card p-0"
+                          className="cover-card catalog-shelf-card cursor-pointer p-0"
                           onMouseMove={handleCoverMove}
-                          onMouseEnter={(e) => handleCardEnter(item, e)}
-                          onMouseLeave={(e) => { resetCoverMove(e); handleCardLeave(); }}
+                          onClick={(e) => handleCardClick(item, e)}
+                          onMouseLeave={resetCoverMove}
+                          onKeyDown={(event) => handleCardKeyDown(item, event)}
+                          role="button"
+                          tabIndex={0}
+                          aria-expanded={hoveredItem?.id === item.id}
                           initial={{ opacity: 0, y: 12 }}
                           whileInView={{ opacity: 1, y: 0 }}
                           viewport={{ once: true, margin: "-40px" }}
@@ -694,8 +729,6 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
             animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
             exit={{ opacity: 0, x: infoPos.showLeft ? 14 : -14, y: 10, scale: 0.94 }}
             transition={{ type: "spring", stiffness: 320, damping: 30, mass: 0.55 }}
-            onMouseEnter={cancelLeave}
-            onMouseLeave={handleCardLeave}
           >
             {/* Neon top accent */}
             <div
