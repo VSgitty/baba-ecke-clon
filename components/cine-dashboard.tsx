@@ -147,14 +147,16 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
   const handleCardEnter = useCallback((item: CatalogItem, event: React.MouseEvent<HTMLElement>) => {
     if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
     const rect = event.currentTarget.getBoundingClientRect();
-    const infoW = 292;
-    const infoH = 420;
+    const infoW = 272;
+    const infoH = 392;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const showLeft = vw - rect.right < infoW + 16;
-    const rawLeft = showLeft ? rect.left - infoW - 10 : rect.right + 10;
+    const showLeft = vw - rect.right < infoW + 24;
+    const horizontalOffset = 24;
+    const verticalLift = Math.min(140, Math.max(78, rect.height * 0.46));
+    const rawLeft = showLeft ? rect.left - infoW - horizontalOffset : rect.right - 64;
     const left = Math.max(8, Math.min(rawLeft, vw - infoW - 8));
-    const top  = Math.max(8, Math.min(rect.top - 10, vh - infoH - 8));
+    const top  = Math.max(8, Math.min(rect.top - verticalLift, vh - infoH - 8));
     setInfoPos({ left, top, showLeft });
     setHoveredItem(item);
   }, []);
@@ -454,7 +456,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
         {hoveredItem && infoPos && (
           <motion.div
             key={hoveredItem.id}
-            className="info-card-float fixed z-[200] w-[292px]"
+            className="info-card-float fixed z-[200] w-[272px]"
             style={{ left: infoPos.left, top: infoPos.top }}
             initial={{ opacity: 0, x: infoPos.showLeft ? 10 : -10, scale: 0.94 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}

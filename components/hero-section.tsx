@@ -47,7 +47,7 @@ export function HeroSection() {
     >
       {/* Layer 1 — deep background image */}
       <motion.div
-        className="hero-parallax-back absolute inset-0 -z-20 scale-110"
+        className="hero-parallax-back absolute inset-0 z-0 scale-110"
         style={{ y: parallaxYBack, x: driftX }}
       >
         <Image
@@ -62,7 +62,7 @@ export function HeroSection() {
 
       {/* Layer 2 — soft foreground blur overlay */}
       <motion.div
-        className="hero-parallax-front absolute inset-0 -z-10 scale-110"
+        className="hero-parallax-front absolute inset-0 z-[1] scale-110"
         style={{ y: parallaxYFront, x: driftXFront }}
       >
         <Image
@@ -76,11 +76,11 @@ export function HeroSection() {
       </motion.div>
 
       {/* Layer 3 — cinematic fog */}
-      <motion.div className="hero-parallax-fog absolute inset-0 -z-[5]" style={{ opacity: fogOpacity }} />
+      <motion.div className="hero-parallax-fog absolute inset-0 z-[2]" style={{ opacity: fogOpacity }} />
 
       {/* Layer 4 — ambient light leaks */}
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 -z-[4] h-[38rem]"
+        className="pointer-events-none absolute inset-x-0 top-0 z-[3] h-[38rem]"
         style={{
           background:
             "radial-gradient(ellipse 60% 50% at 12% 0%,rgba(245,176,52,0.22),transparent 46%)," +
@@ -90,11 +90,11 @@ export function HeroSection() {
       />
 
       {/* Layer 5 — bottom fade to body */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-[3] h-32 bg-gradient-to-t from-[#060910] to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] h-32 bg-gradient-to-t from-[#060910] to-transparent" />
 
       {/* VHS timestamp watermark */}
       <div
-        className="pointer-events-none absolute right-6 top-6 z-10 select-none font-mono text-[10px] tracking-widest opacity-30"
+        className="pointer-events-none absolute right-6 top-6 z-20 select-none font-mono text-[10px] tracking-widest opacity-30"
         style={{ color: "var(--brand)", textShadow: "0 0 10px rgba(245,176,52,0.6)" }}
         aria-hidden
       >
@@ -103,7 +103,7 @@ export function HeroSection() {
 
       {/* Content */}
       <motion.div
-        className="relative mx-auto h-[44vh] min-h-[280px] w-full max-w-[1800px] sm:h-[52vh] lg:h-[60vh]"
+        className="relative z-10 mx-auto h-[44vh] min-h-[280px] w-full max-w-[1800px] sm:h-[52vh] lg:h-[60vh]"
         style={{ y: titleY, opacity: titleOpacity }}
       >
         <div className="absolute inset-x-0 bottom-10 px-6 sm:px-10 lg:px-12">

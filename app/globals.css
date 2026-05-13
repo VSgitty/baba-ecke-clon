@@ -210,21 +210,21 @@ h3,
    ================================================================ */
 .hero-parallax-back {
   transform-origin: center top;
-  filter: saturate(0.82) brightness(0.28) hue-rotate(-6deg);
+  filter: saturate(0.95) brightness(0.72) contrast(1.03) hue-rotate(-4deg);
 }
 
 .hero-parallax-front {
   transform-origin: center top;
-  filter: saturate(1.12) brightness(0.52) blur(3px);
+  filter: saturate(1.08) brightness(0.78) blur(1.6px);
   mix-blend-mode: screen;
-  opacity: 0.2;
+  opacity: 0.3;
 }
 
 .hero-parallax-fog {
   background:
-    linear-gradient(180deg, rgba(3,6,14,0.5) 0%, rgba(6,9,16,0.94) 100%),
-    radial-gradient(ellipse 75% 55% at 14% 0%, rgba(245,176,52,0.16), transparent),
-    radial-gradient(ellipse 52% 42% at 89% 0%, rgba(34,211,238,0.13), transparent);
+    linear-gradient(180deg, rgba(3,6,14,0.18) 0%, rgba(6,9,16,0.7) 78%, rgba(6,9,16,0.9) 100%),
+    radial-gradient(ellipse 75% 55% at 14% 0%, rgba(245,176,52,0.11), transparent),
+    radial-gradient(ellipse 52% 42% at 89% 0%, rgba(34,211,238,0.1), transparent);
 }
 
 /* ================================================================
@@ -351,7 +351,7 @@ h3,
 .info-card-float {
   background: linear-gradient(148deg, rgba(11,15,30,0.96), rgba(5,8,18,0.98));
   border: 1px solid rgba(245,176,52,0.28);
-  border-radius: 16px;
+  border-radius: 8px;
   backdrop-filter: blur(32px) saturate(1.5);
   -webkit-backdrop-filter: blur(32px) saturate(1.5);
   box-shadow:
