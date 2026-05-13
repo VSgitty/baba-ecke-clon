@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { motion, useMotionTemplate, useMotionValue, useScroll, useTransform } from "framer-motion";
-import { Sparkles, Layers3, Clapperboard, LibraryBig } from "lucide-react";
-import { useMemo, useRef } from "react";
+import { AnimatePresence, motion, useMotionTemplate, useMotionValue, useScroll, useTransform } from "framer-motion";
+import { ChevronDown, Clapperboard, Layers3, LibraryBig, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type FranchiseWorld = {
   slug: string;
@@ -112,7 +112,21 @@ const worlds: FranchiseWorld[] = [
   }
 ];
 
-function FranchiseSection({ world, index }: { world: FranchiseWorld; index: number }) {
+function FranchiseSection({
+  world,
+  index,
+  isActive,
+  isLast,
+  registerRef,
+  onScrollNext,
+}: {
+  world: FranchiseWorld;
+  index: number;
+  isActive: boolean;
+  isLast: boolean;
+  registerRef: (slug: string, el: HTMLElement | null) => void;
+  onScrollNext: () => void;
+}) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const pointerX = useMotionValue(0);
   const pointerY = useMotionValue(0);
@@ -156,9 +170,16 @@ function FranchiseSection({ world, index }: { world: FranchiseWorld; index: numb
     pointerY.set(0);
   }
 
+  useEffect(() => {
+    registerRef(world.slug, sectionRef.current);
+    return () => registerRef(world.slug, null);
+  }, [world.slug, registerRef]);
+
   return (
     <section
       ref={sectionRef}
+      id={`franchise-section-${world.slug}`}
+      data-franchise-slug={world.slug}
       className="franchise-world relative isolate min-h-[94svh] overflow-clip px-4 py-12 sm:px-7 lg:px-10"
       style={{
         background: `linear-gradient(160deg, ${world.tone}, rgba(2,6,14,0.92) 38%, rgba(2,4,10,0.98)), radial-gradient(circle at 50% 10%, ${world.atmosphere}, transparent 58%)`
@@ -174,6 +195,20 @@ function FranchiseSection({ world, index }: { world: FranchiseWorld; index: numb
 
       <div className="franchise-noise absolute inset-0 z-[2]" aria-hidden />
       <div className="franchise-vignette absolute inset-0 z-[2]" aria-hidden />
+
+      {/* Active top accent line */}
+      <AnimatePresence>
+        {isActive && (
+          <motion.div
+            className="pointer-events-none absolute inset-x-0 top-0 z-[5] h-[2px]"
+            initial={{ scaleX: 0, opacity: 0 }}
+            animate={{ scaleX: 1, opacity: 1 }}
+            exit={{ scaleX: 0, opacity: 0 }}
+            transition={{ duration: 0.55, ease: [0.23, 1, 0.32, 1] }}
+            style={{ background: `linear-gradient(90deg, transparent, ${world.accent}, transparent)`, transformOrigin: "center" }}
+          />
+        )}
+      </AnimatePresence>
 
       <div className="absolute inset-0 z-[3]" aria-hidden>
         {particles.map((particle) => (
@@ -254,14 +289,178 @@ function FranchiseSection({ world, index }: { world: FranchiseWorld; index: numb
       >
         <div className="franchise-transition-shards" style={{ background: `linear-gradient(90deg, transparent, ${world.accent}44, transparent)` }} />
       </motion.div>
+
+      {/* Scroll-to-next hint */}
+      {!isLast && (
+        <div className="absolute inset-x-0 bottom-8 z-10 flex justify-center">
+          <motion.button
+            className="franchise-scroll-hint"
+            onClick={onScrollNext}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9, duration: 0.45 }}
+            aria-label="Zur nächsten Franchise-Welt scrollen"
+          >
+            <motion.span
+              animate={{ y: [0, 5, 0] }}
+              transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+              style={{ display: "flex" }}
+            >
+              <ChevronDown className="h-5 w-5" style={{ color: world.accent }} />
+            </motion.span>
+          </motion.button>
+        </div>
+      )}
     </section>
   );
 }
 
+// ── MINI-MAP ─────────────────────────────────────────────────────
+
+type MiniMapItem = { slug: string; title: string; accent: string };
+
+function FranchiseMiniMap({
+  items,
+  activeSlug,
+  onNavigate,
+}: {
+  items: MiniMapItem[];
+  activeSlug: string | null;
+  onNavigate: (slug: string) => void;
+}) {
+  return (
+    <nav className="franchise-minimap hidden lg:flex" aria-label="Franchise Navigation">
+      <div className="franchise-minimap-line" aria-hidden />
+      <ul className="franchise-minimap-track">
+        {items.map((item) => {
+          const isActive = activeSlug === item.slug;
+          return (
+            <li key={item.slug}>
+              <button
+                className="franchise-minimap-item"
+                onClick={() => onNavigate(item.slug)}
+                aria-label={`Zu ${item.title} springen`}
+                aria-current={isActive ? "true" : undefined}
+              >
+                <motion.span
+                  className="franchise-minimap-dot"
+                  animate={{
+                    scale: isActive ? 1.7 : 1,
+                    background: isActive ? item.accent : "rgba(255,255,255,0.22)",
+                    boxShadow: isActive ? `0 0 14px ${item.accent}88` : "none",
+                  }}
+                  transition={{ type: "spring", stiffness: 320, damping: 22 }}
+                  style={{ display: "block" }}
+                />
+                <motion.span
+                  className="franchise-minimap-label"
+                  animate={{
+                    opacity: isActive ? 1 : 0,
+                    x: isActive ? 0 : 6,
+                    color: item.accent,
+                  }}
+                  transition={{ duration: 0.22 }}
+                  aria-hidden={!isActive}
+                  style={{ display: "block" }}
+                >
+                  {item.title}
+                </motion.span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
 export function FranchisesExperience() {
+  const [activeSlug, setActiveSlug] = useState<string | null>("intro");
+  const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const introRef = useRef<HTMLElement | null>(null);
+
+  const registerSection = useCallback((slug: string, el: HTMLElement | null) => {
+    if (el) sectionRefs.current.set(slug, el);
+    else sectionRefs.current.delete(slug);
+  }, []);
+
+  // Stable navigate — only accesses refs
+  const navigateTo = useCallback((slug: string) => {
+    if (slug === "intro") {
+      introRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    sectionRefs.current.get(slug)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  const scrollToNextWorld = useCallback((currentSlug: string) => {
+    const idx = worlds.findIndex((w) => w.slug === currentSlug);
+    const next = worlds[idx + 1];
+    if (next) navigateTo(next.slug);
+  }, [navigateTo]);
+
+  // IntersectionObserver — set up once after all children mounted
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let maxRatio = 0;
+        let best: string | null = null;
+        entries.forEach((entry) => {
+          if (entry.intersectionRatio > maxRatio) {
+            maxRatio = entry.intersectionRatio;
+            best = entry.target.getAttribute("data-franchise-slug");
+          }
+        });
+        if (best && maxRatio > 0.18) setActiveSlug(best);
+      },
+      { threshold: [0.18, 0.45, 0.75] }
+    );
+
+    if (introRef.current) observer.observe(introRef.current);
+    sectionRefs.current.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []); // runs after first render — children effects have already populated sectionRefs
+
+  // Keyboard navigation (↑ / ↓)
+  useEffect(() => {
+    const slugList = ["intro", ...worlds.map((w) => w.slug)];
+
+    function handleKey(e: KeyboardEvent) {
+      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+      const active = document.activeElement;
+      if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) return;
+      e.preventDefault();
+      const cur = activeSlug ? slugList.indexOf(activeSlug) : 0;
+      const next =
+        e.key === "ArrowDown"
+          ? Math.min(cur + 1, slugList.length - 1)
+          : Math.max(cur - 1, 0);
+      if (next !== cur) navigateTo(slugList[next]);
+    }
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [activeSlug, navigateTo]);
+
+  const miniMapItems: MiniMapItem[] = useMemo(
+    () => [
+      { slug: "intro", title: "Intro", accent: "#f5b034" },
+      ...worlds.map((w) => ({ slug: w.slug, title: w.title, accent: w.accent })),
+    ],
+    []
+  );
+
   return (
     <div className="franchise-experience-root pb-20">
-      <header className="franchise-top-intro relative overflow-hidden px-4 pb-12 pt-16 sm:px-7 lg:px-10">
+      <FranchiseMiniMap items={miniMapItems} activeSlug={activeSlug} onNavigate={navigateTo} />
+
+      <header
+        ref={introRef}
+        id="franchise-section-intro"
+        data-franchise-slug="intro"
+        className="franchise-top-intro relative overflow-hidden px-4 pb-14 pt-16 sm:px-7 lg:px-10"
+      >
         <div className="franchise-top-aurora" aria-hidden />
         <div className="relative z-10 mx-auto max-w-[1280px]">
           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-zinc-400">Digital Video Archive</p>
@@ -269,15 +468,47 @@ export function FranchisesExperience() {
             Franchises as Cinematic Worlds
           </h1>
           <p className="mt-4 max-w-[66ch] text-zinc-300 sm:text-lg">
-            Keine normale Uebersicht. Jede Section ist eine eigene Sammlerwelt mit cineastischen Uebergaengen,
-            parallax Tiefe, atmosphaerischem Licht und einem interaktiven Collector Case Stack.
+            Keine normale Uebersicht. Jede Section ist eine eigene Sammlerwelt mit cineastischen
+            Uebergaengen, parallax Tiefe, atmosphaerischem Licht und einem interaktiven Collector Case Stack.
           </p>
+
+          <motion.div
+            className="mt-10 flex flex-wrap items-center gap-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55, duration: 0.5 }}
+          >
+            <button
+              className="franchise-start-btn"
+              onClick={() => navigateTo(worlds[0].slug)}
+            >
+              <span>Erste Welt betreten</span>
+              <motion.span
+                animate={{ x: [0, 4, 0] }}
+                transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+                aria-hidden
+              >
+                →
+              </motion.span>
+            </button>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+              ↑ ↓ Tastatur · Minimap rechts
+            </p>
+          </motion.div>
         </div>
       </header>
 
       <div className="space-y-0">
         {worlds.map((world, index) => (
-          <FranchiseSection key={world.slug} world={world} index={index} />
+          <FranchiseSection
+            key={world.slug}
+            world={world}
+            index={index}
+            isActive={activeSlug === world.slug}
+            isLast={index === worlds.length - 1}
+            registerRef={registerSection}
+            onScrollNext={() => scrollToNextWorld(world.slug)}
+          />
         ))}
       </div>
     </div>
