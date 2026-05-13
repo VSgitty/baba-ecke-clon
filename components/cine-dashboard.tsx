@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bookmark, Clock3, Dice5, Eye, ExternalLink, Film, Filter, Flame, Play, Sparkles, Star } from "lucide-react";
+import { Clock3, Dice5, ExternalLink, Film, Filter, Flame, Play, Sparkles, Star } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import type { CatalogItem } from "@/lib/catalog";
 import { franchises } from "@/data/content";
@@ -19,6 +20,15 @@ type CineDashboardProps = {
   catalog: CatalogItem[];
 };
 
+type CatalogShelf = {
+  key: string;
+  label: string;
+  kicker: string;
+  accent: string;
+  icon: LucideIcon;
+  items: CatalogItem[];
+};
+
 const FRANCHISE_SVG_BY_SLUG: Record<string, string> = {
   "harry-potter": "/c/franchise/fantasy.svg",
   scream: "/c/franchise/horror.svg",
@@ -33,6 +43,18 @@ const FRANCHISE_TONE_BY_SLUG: Record<string, string> = {
 
 function normalizeTitle(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function classifyCatalogItem(item: CatalogItem): string {
+  const title = normalizeTitle(item.title);
+  const genre = normalizeTitle(item.genre);
+
+  if (genre.includes("horror") || title.includes("scream") || title.includes("saw") || title.includes("slasher")) return "horror";
+  if (genre.includes("sci fi") || genre.includes("science fiction") || genre.includes("alien") || genre.includes("space") || title.includes("interstellar") || title.includes("alien")) return "sci-fi";
+  if (genre.includes("action") || genre.includes("superhero") || genre.includes("adventure") || title.includes("john wick") || title.includes("matrix")) return "action";
+  if (genre.includes("animation") || genre.includes("anime") || genre.includes("fantasy") || genre.includes("family") || title.includes("anime") || title.includes("dangan")) return "anime-fantasy";
+  if (genre.includes("drama") || genre.includes("romance") || genre.includes("mystery") || title.includes("lost") || title.includes("pulp fiction")) return "drama";
+  return "cult";
 }
 
 function buildInitialFranchiseState(): FranchiseState {
@@ -150,17 +172,42 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
     ) as Record<string, { poster: string | null; svgAsset: string; toneClass: string }>;
   }, [catalog]);
 
+  const catalogShelves = useMemo<CatalogShelf[]>(() => {
+    const grouped: Record<string, CatalogItem[]> = {
+      horror: [],
+      "sci-fi": [],
+      action: [],
+      "anime-fantasy": [],
+      drama: [],
+      cult: []
+    };
+
+    filteredCatalog.forEach((item) => {
+      const shelfKey = classifyCatalogItem(item);
+      grouped[shelfKey].push(item);
+    });
+
+    const shelves: CatalogShelf[] = [
+      { key: "horror", label: "Horror Rack", kicker: "Night Shelf", accent: "var(--neon-pink)", icon: Flame, items: grouped.horror },
+      { key: "sci-fi", label: "Sci-Fi Console", kicker: "Future Shelf", accent: "var(--neon-cyan)", icon: Sparkles, items: grouped["sci-fi"] },
+      { key: "action", label: "Action Wall", kicker: "Impact Shelf", accent: "var(--brand)", icon: Play, items: grouped.action },
+      { key: "anime-fantasy", label: "Anime / Fantasy", kicker: "Illustrated Shelf", accent: "var(--neon-purple)", icon: Film, items: grouped["anime-fantasy"] },
+      { key: "drama", label: "Drama / Mystery", kicker: "Story Shelf", accent: "var(--brand-strong)", icon: Clock3, items: grouped.drama },
+      { key: "cult", label: "Cult Corner", kicker: "Wild Shelf", accent: "#cbd5e1", icon: Dice5, items: grouped.cult }
+    ];
+
+    return shelves
+      .map((shelf) => ({
+        ...shelf,
+        items: shelf.items.slice(0, 10)
+      }))
+      .filter((shelf) => shelf.items.length > 0);
+  }, [filteredCatalog]);
+
   const franchiseSlugByTitle = useMemo(
     () => Object.fromEntries(franchises.map((franchise) => [franchise.title, franchise.slug])) as Record<string, string>,
     []
   );
-
-  const statCards = [
-    { label: "Gesamtkatalog", value: catalog.length, accent: "var(--brand)", icon: Film, orb: "stat-orb-gold" },
-    { label: "Watchlist", value: Object.keys(watchlist).length, accent: "var(--neon-cyan)", icon: Bookmark, orb: "stat-orb-cyan" },
-    { label: "Continue Watching", value: continueWatching.length, accent: "var(--neon-purple)", icon: Clock3, orb: "stat-orb-purple" },
-    { label: "Gefilterte Titel", value: filteredCatalog.length, accent: "var(--brand-strong)", icon: Eye, orb: "stat-orb-amber" }
-  ] as const;
 
   function persistWatchlist(next: Record<string, string>) {
     setWatchlist(next);
@@ -246,31 +293,22 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
   return (
     <div className="space-y-10">
       <section className="site-shell grid w-full gap-3 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
-        {statCards.map((stat) => {
-          const StatIcon = stat.icon;
-          return (
-            <div key={stat.label} className="stat-panel group relative overflow-hidden px-5 py-4">
-              <div className={`stat-orb ${stat.orb}`} aria-hidden />
-              <div className="absolute -right-4 -top-4 opacity-70 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
-                <div className="stat-icon-shell">
-                  <StatIcon className="stat-icon" style={{ color: stat.accent }} />
-                </div>
-              </div>
-              <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">{stat.label}</p>
-              <div className="flex items-end gap-2">
-                <p
-                  className="font-display text-4xl"
-                  style={{ color: stat.accent, textShadow: `0 0 24px ${stat.accent}55` }}
-                >
-                  {stat.value}
-                </p>
-                <span className="mb-1.5 inline-flex h-5 items-center rounded-full border border-white/10 bg-white/[0.03] px-2 text-[10px] uppercase tracking-[0.12em] text-zinc-400 opacity-80">
-                  live
-                </span>
-              </div>
-            </div>
-          );
-        })}
+        {[
+          { label: "Gesamtkatalog", value: catalog.length, accent: "var(--brand)" },
+          { label: "Watchlist", value: Object.keys(watchlist).length, accent: "var(--neon-cyan)" },
+          { label: "Continue Watching", value: continueWatching.length, accent: "var(--neon-purple)" },
+          { label: "Gefilterte Titel", value: filteredCatalog.length, accent: "var(--brand-strong)" }
+        ].map((stat) => (
+          <div key={stat.label} className="stat-panel px-5 py-4">
+            <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">{stat.label}</p>
+            <p
+              className="font-display text-4xl"
+              style={{ color: stat.accent, textShadow: `0 0 24px ${stat.accent}55` }}
+            >
+              {stat.value}
+            </p>
+          </div>
+        ))}
       </section>
 
       <section className="site-shell grid w-full gap-4 px-4 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
@@ -305,7 +343,8 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                       <img
                         src={partPoster}
                         alt=""
-                        loading="lazy"
+                        loading="eager"
+                        fetchPriority="high"
                         decoding="async"
                         className="continue-card-media"
                       />
@@ -404,7 +443,8 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                       <img
                         src={visual.poster}
                         alt={`${franchise.title} Banner`}
-                        loading="lazy"
+                        loading="eager"
+                        fetchPriority="high"
                         decoding="async"
                         className="franchise-banner-media"
                       />
@@ -415,7 +455,8 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                     <img
                       src={visual?.svgAsset || "/c/franchise/action.svg"}
                       alt=""
-                      loading="lazy"
+                      loading="eager"
+                      fetchPriority="high"
                       decoding="async"
                       className="franchise-banner-svg"
                       aria-hidden
@@ -512,57 +553,86 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
               ))}
             </div>
 
-            <div className="catalog-shelf grid gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
-              {filteredCatalog.slice(0, 60).map((item) => {
+            <div className="catalog-regal space-y-8">
+              {catalogShelves.map((shelf, shelfIndex) => {
+                const ShelfIcon = shelf.icon;
                 return (
-                  <article
-                    key={item.id}
-                    className="cover-card p-0"
-                    onMouseMove={handleCoverMove}
-                    onMouseEnter={(e) => handleCardEnter(item, e)}
-                    onMouseLeave={(e) => { resetCoverMove(e); handleCardLeave(); }}
+                  <motion.section
+                    key={shelf.key}
+                    className="catalog-shelf-shell"
+                    initial={{ opacity: 0, y: 18 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-80px" }}
+                    transition={{ duration: 0.45, delay: shelfIndex * 0.06, ease: [0.23, 1, 0.32, 1] }}
                   >
-                    <div className="cover-tilt relative aspect-[2/3] w-full bg-zinc-950">
-                      {item.poster ? (
-                        <img
-                          src={item.poster}
-                          alt={`${item.title} Cover`}
-                          loading="lazy"
-                          decoding="async"
-                          className="cover-media h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="grid h-full w-full place-items-center">
-                          <span className="text-[10px] text-zinc-600 opacity-40">Kein Cover</span>
-                        </div>
-                      )}
-                      <div className="cover-spine" aria-hidden />
-                      <div className="cover-shine" aria-hidden />
-
-                      {/* Subtle bottom vignette */}
-                      <div
-                        className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
-                        style={{ background: "linear-gradient(to top, rgba(4,6,14,0.7), transparent)" }}
-                        aria-hidden
-                      />
-                      {/* Rating badge */}
-                      {item.rating ? (
-                        <div
-                          className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold backdrop-blur-sm"
-                          style={{
-                            background: "rgba(0,0,0,0.55)",
-                            border: "1px solid rgba(245,176,52,0.3)",
-                            color: "var(--brand-strong)"
-                          }}
-                        >
-                          <Star className="h-2.5 w-2.5 fill-current" />
-                          {item.rating.toFixed(1)}
-                        </div>
-                      ) : null}
+                    <div className="catalog-shelf-header">
+                      <div>
+                        <p className="catalog-shelf-kicker">{shelf.kicker}</p>
+                        <h3 className="catalog-shelf-title">{shelf.label}</h3>
+                      </div>
+                      <div className="catalog-shelf-badge">
+                        <ShelfIcon className="h-3.5 w-3.5" style={{ color: shelf.accent }} />
+                        <span>{shelf.items.length}</span>
+                      </div>
                     </div>
 
-                    <div className="cover-reflection" aria-hidden />
-                  </article>
+                    <div className="catalog-shelf-rail">
+                      {shelf.items.map((item, itemIndex) => (
+                        <motion.article
+                          key={item.id}
+                          className="cover-card catalog-shelf-card p-0"
+                          onMouseMove={handleCoverMove}
+                          onMouseEnter={(e) => handleCardEnter(item, e)}
+                          onMouseLeave={(e) => { resetCoverMove(e); handleCardLeave(); }}
+                          initial={{ opacity: 0, y: 12 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true, margin: "-40px" }}
+                          transition={{ duration: 0.35, delay: itemIndex * 0.025, ease: [0.23, 1, 0.32, 1] }}
+                          whileHover={{ y: -6, scale: 1.02 }}
+                        >
+                          <div className="cover-tilt relative aspect-[2/3] w-full bg-zinc-950">
+                            {item.poster ? (
+                              <img
+                                src={item.poster}
+                                alt={`${item.title} Cover`}
+                                loading="lazy"
+                                decoding="async"
+                                className="cover-media h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="grid h-full w-full place-items-center">
+                                <span className="text-[10px] text-zinc-600 opacity-40">Kein Cover</span>
+                              </div>
+                            )}
+                            <div className="cover-spine" aria-hidden />
+                            <div className="cover-shine" aria-hidden />
+
+                            <div
+                              className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
+                              style={{ background: "linear-gradient(to top, rgba(4,6,14,0.7), transparent)" }}
+                              aria-hidden
+                            />
+
+                            {item.rating ? (
+                              <div
+                                className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold backdrop-blur-sm"
+                                style={{
+                                  background: "rgba(0,0,0,0.55)",
+                                  border: "1px solid rgba(245,176,52,0.3)",
+                                  color: "var(--brand-strong)"
+                                }}
+                              >
+                                <Star className="h-2.5 w-2.5 fill-current" />
+                                {item.rating.toFixed(1)}
+                              </div>
+                            ) : null}
+                          </div>
+
+                          <div className="cover-reflection" aria-hidden />
+                        </motion.article>
+                      ))}
+                    </div>
+                  </motion.section>
                 );
               })}
             </div>
