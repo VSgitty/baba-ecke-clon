@@ -20,6 +20,22 @@ type CineDashboardProps = {
   catalog: CatalogItem[];
 };
 
+const FRANCHISE_SVG_BY_SLUG: Record<string, string> = {
+  "harry-potter": "/c/franchise/fantasy.svg",
+  scream: "/c/franchise/horror.svg",
+  saw: "/c/franchise/horror.svg"
+};
+
+const FRANCHISE_TONE_BY_SLUG: Record<string, string> = {
+  "harry-potter": "franchise-tone-fantasy",
+  scream: "franchise-tone-horror",
+  saw: "franchise-tone-horror"
+};
+
+function normalizeTitle(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
 function buildInitialFranchiseState(): FranchiseState {
   return Object.fromEntries(
     franchises.map((franchise) => [
@@ -106,6 +122,34 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
       }
     ];
   }, [watchlist, filteredCatalog.length, franchiseState]);
+
+  const franchiseVisuals = useMemo(() => {
+    const normalizedCatalog = catalog.map((item) => ({
+      ...item,
+      normalizedTitle: normalizeTitle(item.title)
+    }));
+
+    return Object.fromEntries(
+      franchises.map((franchise) => {
+        const franchiseTitle = normalizeTitle(franchise.title);
+        const partTitles = franchise.parts.map((part) => normalizeTitle(part.title));
+
+        const matchedPoster =
+          normalizedCatalog.find((item) => item.normalizedTitle.includes(franchiseTitle))?.poster ||
+          normalizedCatalog.find((item) => partTitles.some((title) => item.normalizedTitle.includes(title)))?.poster ||
+          null;
+
+        return [
+          franchise.slug,
+          {
+            poster: matchedPoster,
+            svgAsset: FRANCHISE_SVG_BY_SLUG[franchise.slug] || "/c/franchise/action.svg",
+            toneClass: FRANCHISE_TONE_BY_SLUG[franchise.slug] || "franchise-tone-action"
+          }
+        ];
+      })
+    ) as Record<string, { poster: string | null; svgAsset: string; toneClass: string }>;
+  }, [catalog]);
 
   function persistWatchlist(next: Record<string, string>) {
     setWatchlist(next);
@@ -279,29 +323,63 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
             {franchises.map((franchise) => {
               const seen = franchise.parts.filter((part) => franchiseState[franchise.slug]?.[part.id]).length;
               const progress = Math.round((seen / franchise.parts.length) * 100);
+              const visual = franchiseVisuals[franchise.slug];
+              const railItems = [...franchise.parts.map((part) => part.title), ...franchise.parts.map((part) => part.title)];
               return (
                 <div
                   key={franchise.slug}
-                  className="rounded-2xl border border-white/15 bg-white/[0.04] p-4"
+                  className="franchise-showcase rounded-2xl border border-white/15 bg-white/[0.04]"
                 >
-                  <div className="mb-3 flex items-center justify-between">
-                    <p className="font-medium text-zinc-100">{franchise.title}</p>
-                    <Badge variant="muted">{progress}%</Badge>
+                  <div className={`franchise-banner ${visual?.toneClass || "franchise-tone-action"}`}>
+                    {visual?.poster ? (
+                      <img
+                        src={visual.poster}
+                        alt={`${franchise.title} Banner`}
+                        loading="lazy"
+                        decoding="async"
+                        className="franchise-banner-media"
+                      />
+                    ) : (
+                      <div className="franchise-banner-fallback" aria-hidden />
+                    )}
+                    <div className="franchise-banner-shade" aria-hidden />
+                    <img
+                      src={visual?.svgAsset || "/c/franchise/action.svg"}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="franchise-banner-svg"
+                      aria-hidden
+                    />
+                    <div className="franchise-rail" aria-hidden>
+                      <div className="franchise-rail-track">
+                        {railItems.map((title, index) => (
+                          <span key={`${franchise.slug}-${title}-${index}`}>{title}</span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    {franchise.parts.map((part) => (
-                      <label key={part.id} className="flex items-center justify-between gap-3 rounded-lg px-1 py-1.5">
-                        <span className="text-sm text-zinc-300">
-                          {part.title} ({part.year})
-                        </span>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(franchiseState[franchise.slug]?.[part.id])}
-                          onChange={() => toggleFranchisePart(franchise.slug, part.id)}
-                          className="h-4 w-4 rounded border-border"
-                        />
-                      </label>
-                    ))}
+
+                  <div className="p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="font-medium text-zinc-100">{franchise.title}</p>
+                      <Badge variant="muted">{progress}%</Badge>
+                    </div>
+                    <div className="space-y-2">
+                      {franchise.parts.map((part) => (
+                        <label key={part.id} className="flex items-center justify-between gap-3 rounded-lg px-1 py-1.5">
+                          <span className="text-sm text-zinc-300">
+                            {part.title} ({part.year})
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(franchiseState[franchise.slug]?.[part.id])}
+                            onChange={() => toggleFranchisePart(franchise.slug, part.id)}
+                            className="h-4 w-4 rounded border-border"
+                          />
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
               );
