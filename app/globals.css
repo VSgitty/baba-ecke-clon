@@ -614,6 +614,66 @@ h3,
   box-shadow: 0 10px 36px -10px rgba(0,0,0,0.55), 0 0 24px -10px rgba(245,176,52,0.2);
 }
 
+.stat-icon-shell {
+  display: grid;
+  place-items: center;
+  width: 3.1rem;
+  height: 3.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 24px -16px rgba(0,0,0,0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.stat-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  opacity: 0.9;
+  transform: translate3d(0, 0, 0);
+  transition: transform 240ms cubic-bezier(0.23,1,0.32,1), opacity 240ms ease;
+}
+
+.stat-panel:hover .stat-icon {
+  opacity: 1;
+  transform: translate3d(0, -1px, 0) scale(1.08);
+}
+
+.stat-orb {
+  position: absolute;
+  inset: -35% -25% auto auto;
+  width: 7rem;
+  height: 7rem;
+  border-radius: 999px;
+  opacity: 0.42;
+  filter: blur(12px);
+  transform: translate3d(0,0,0) scale(0.9);
+  transition: transform 260ms cubic-bezier(0.23,1,0.32,1), opacity 260ms ease;
+  pointer-events: none;
+}
+
+.stat-panel:hover .stat-orb {
+  opacity: 0.72;
+  transform: translate3d(0, -4px, 0) scale(1);
+}
+
+.stat-orb-gold {
+  background: radial-gradient(circle, rgba(245,176,52,0.55), rgba(245,176,52,0.08) 62%, transparent 72%);
+}
+
+.stat-orb-cyan {
+  background: radial-gradient(circle, rgba(34,211,238,0.48), rgba(34,211,238,0.08) 62%, transparent 72%);
+}
+
+.stat-orb-purple {
+  background: radial-gradient(circle, rgba(167,139,250,0.5), rgba(167,139,250,0.08) 62%, transparent 72%);
+}
+
+.stat-orb-amber {
+  background: radial-gradient(circle, rgba(255,209,119,0.52), rgba(255,209,119,0.08) 62%, transparent 72%);
+}
+
 /* ================================================================
    TICKER
    ================================================================ */

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Clock3, Dice5, ExternalLink, Filter, Flame, Play, Sparkles, Star } from "lucide-react";
+import { Bookmark, Clock3, Dice5, Eye, ExternalLink, Film, Filter, Flame, Play, Sparkles, Star } from "lucide-react";
 
 import type { CatalogItem } from "@/lib/catalog";
 import { franchises } from "@/data/content";
@@ -155,6 +155,13 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
     []
   );
 
+  const statCards = [
+    { label: "Gesamtkatalog", value: catalog.length, accent: "var(--brand)", icon: Film, orb: "stat-orb-gold" },
+    { label: "Watchlist", value: Object.keys(watchlist).length, accent: "var(--neon-cyan)", icon: Bookmark, orb: "stat-orb-cyan" },
+    { label: "Continue Watching", value: continueWatching.length, accent: "var(--neon-purple)", icon: Clock3, orb: "stat-orb-purple" },
+    { label: "Gefilterte Titel", value: filteredCatalog.length, accent: "var(--brand-strong)", icon: Eye, orb: "stat-orb-amber" }
+  ] as const;
+
   function persistWatchlist(next: Record<string, string>) {
     setWatchlist(next);
     window.localStorage.setItem(WATCHLIST_KEY, JSON.stringify(next));
@@ -239,22 +246,31 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
   return (
     <div className="space-y-10">
       <section className="site-shell grid w-full gap-3 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
-        {[
-          { label: "Gesamtkatalog", value: catalog.length, accent: "var(--brand)" },
-          { label: "Watchlist", value: Object.keys(watchlist).length, accent: "var(--neon-cyan)" },
-          { label: "Continue Watching", value: continueWatching.length, accent: "var(--neon-purple)" },
-          { label: "Gefilterte Titel", value: filteredCatalog.length, accent: "var(--brand-strong)" }
-        ].map((stat) => (
-          <div key={stat.label} className="stat-panel px-5 py-4">
-            <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">{stat.label}</p>
-            <p
-              className="font-display text-4xl"
-              style={{ color: stat.accent, textShadow: `0 0 24px ${stat.accent}55` }}
-            >
-              {stat.value}
-            </p>
-          </div>
-        ))}
+        {statCards.map((stat) => {
+          const StatIcon = stat.icon;
+          return (
+            <div key={stat.label} className="stat-panel group relative overflow-hidden px-5 py-4">
+              <div className={`stat-orb ${stat.orb}`} aria-hidden />
+              <div className="absolute -right-4 -top-4 opacity-70 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
+                <div className="stat-icon-shell">
+                  <StatIcon className="stat-icon" style={{ color: stat.accent }} />
+                </div>
+              </div>
+              <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">{stat.label}</p>
+              <div className="flex items-end gap-2">
+                <p
+                  className="font-display text-4xl"
+                  style={{ color: stat.accent, textShadow: `0 0 24px ${stat.accent}55` }}
+                >
+                  {stat.value}
+                </p>
+                <span className="mb-1.5 inline-flex h-5 items-center rounded-full border border-white/10 bg-white/[0.03] px-2 text-[10px] uppercase tracking-[0.12em] text-zinc-400 opacity-80">
+                  live
+                </span>
+              </div>
+            </div>
+          );
+        })}
       </section>
 
       <section className="site-shell grid w-full gap-4 px-4 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
