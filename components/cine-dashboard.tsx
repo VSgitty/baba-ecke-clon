@@ -138,6 +138,21 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
     setRoulettePick(filteredCatalog[index] ?? null);
   }
 
+  function handleCoverMove(event: React.MouseEvent<HTMLElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const px = (event.clientX - rect.left) / rect.width;
+    const py = (event.clientY - rect.top) / rect.height;
+    const tiltX = ((0.5 - py) * 8).toFixed(2);
+    const tiltY = ((px - 0.5) * 10).toFixed(2);
+    event.currentTarget.style.setProperty("--tilt-x", `${tiltX}deg`);
+    event.currentTarget.style.setProperty("--tilt-y", `${tiltY}deg`);
+  }
+
+  function resetCoverMove(event: React.MouseEvent<HTMLElement>) {
+    event.currentTarget.style.setProperty("--tilt-x", "0deg");
+    event.currentTarget.style.setProperty("--tilt-y", "0deg");
+  }
+
   return (
     <div className="space-y-8">
       <section className="mx-auto grid w-full max-w-7xl gap-4 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
@@ -323,13 +338,15 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
               ))}
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="catalog-shelf grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {filteredCatalog.slice(0, 60).map((item) => {
                 const inWatchlist = Boolean(watchlist[item.id]);
                 return (
                   <article
                     key={item.id}
-                    className="overflow-hidden rounded-2xl border border-white/15 bg-white/[0.04] p-0 transition hover:border-[var(--brand)]"
+                    className="cover-card overflow-hidden rounded-2xl border border-white/15 bg-white/[0.04] p-0"
+                    onMouseMove={handleCoverMove}
+                    onMouseLeave={resetCoverMove}
                   >
                     <div className="relative h-40 w-full overflow-hidden bg-zinc-900">
                       {item.poster ? (
@@ -338,11 +355,13 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                           alt={`${item.title} Cover`}
                           loading="lazy"
                           decoding="async"
-                          className="h-full w-full object-cover"
+                          className="cover-media h-full w-full object-cover"
                         />
                       ) : (
                         <div className="grid h-full w-full place-items-center text-xs text-zinc-500">Kein Cover</div>
                       )}
+                      <div className="cover-spine" aria-hidden />
+                      <div className="cover-shine" aria-hidden />
                       <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent,rgba(5,8,18,0.82))]" />
                     </div>
                     <div className="p-4">

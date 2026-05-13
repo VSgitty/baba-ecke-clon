@@ -154,6 +154,79 @@ h3,
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
+.hero-parallax-back {
+  transform-origin: center top;
+  filter: saturate(0.95) brightness(0.38);
+}
+
+.hero-parallax-front {
+  transform-origin: center top;
+  filter: saturate(1.05) brightness(0.58) blur(2px);
+  mix-blend-mode: screen;
+  opacity: 0.28;
+}
+
+.hero-parallax-fog {
+  background:
+    linear-gradient(180deg, rgba(7, 10, 20, 0.38), rgba(7, 10, 20, 0.88)),
+    radial-gradient(circle at 20% 0%, rgba(245, 176, 52, 0.2), transparent 40%),
+    radial-gradient(circle at 84% 0%, rgba(88, 225, 255, 0.18), transparent 32%);
+}
+
+.catalog-shelf {
+  perspective: 1200px;
+}
+
+.cover-card {
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+  box-shadow: 0 18px 36px -24px rgba(0, 0, 0, 0.7);
+}
+
+.cover-card:hover {
+  border-color: color-mix(in srgb, var(--brand) 65%, transparent);
+  box-shadow:
+    0 28px 42px -24px rgba(0, 0, 0, 0.82),
+    0 0 0 1px rgba(245, 176, 52, 0.28);
+}
+
+.cover-media {
+  transform: translateZ(14px);
+  transition: transform 260ms ease, filter 260ms ease;
+}
+
+.cover-card:hover .cover-media {
+  transform: translateZ(24px) scale(1.04);
+  filter: saturate(1.14) contrast(1.08);
+}
+
+.cover-shine {
+  position: absolute;
+  inset: -30% auto auto -70%;
+  width: 44%;
+  height: 170%;
+  transform: rotate(16deg) translateX(0);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0));
+  opacity: 0;
+  transition: transform 420ms ease, opacity 420ms ease;
+  pointer-events: none;
+}
+
+.cover-card:hover .cover-shine {
+  transform: rotate(16deg) translateX(430%);
+  opacity: 1;
+}
+
+.cover-spine {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 10px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.42), rgba(255, 255, 255, 0.06));
+  opacity: 0.75;
+}
+
 .ticker-track {
   animation: ticker-run 42s linear infinite;
 }
