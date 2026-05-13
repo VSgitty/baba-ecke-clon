@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Dice5, ExternalLink, Filter, Flame, Sparkles, Star } from "lucide-react";
+import { Clock3, Dice5, ExternalLink, Filter, Flame, Play, Sparkles, Star } from "lucide-react";
 
 import type { CatalogItem } from "@/lib/catalog";
 import { franchises } from "@/data/content";
@@ -150,6 +150,11 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
     ) as Record<string, { poster: string | null; svgAsset: string; toneClass: string }>;
   }, [catalog]);
 
+  const franchiseSlugByTitle = useMemo(
+    () => Object.fromEntries(franchises.map((franchise) => [franchise.title, franchise.slug])) as Record<string, string>,
+    []
+  );
+
   function persistWatchlist(next: Record<string, string>) {
     setWatchlist(next);
     window.localStorage.setItem(WATCHLIST_KEY, JSON.stringify(next));
@@ -259,22 +264,77 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
             <CardDescription>Naechste sinnvolle Schritte ueber deine Franchises hinweg.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2">
-            {continueWatching.map((item) => (
-              <div
-                key={`${item.franchise}-${item.part}`}
-                className="rounded-xl border border-white/15 bg-white/[0.04] p-3"
-              >
-                <p className="text-sm font-medium text-zinc-100">{item.franchise}</p>
-                <p className="text-sm text-zinc-300">Next: {item.part}</p>
-                <div className="mt-3 h-2 rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-[var(--brand)]"
-                    style={{ width: `${item.progress}%` }}
-                    aria-hidden
-                  />
-                </div>
-              </div>
-            ))}
+            {continueWatching.map((item, index) => {
+              const slug = franchiseSlugByTitle[item.franchise];
+              const visual = slug ? franchiseVisuals[slug] : null;
+              const partPoster =
+                catalog.find(
+                  (entry) =>
+                    entry.poster && normalizeTitle(entry.title).includes(normalizeTitle(item.part))
+                )?.poster || visual?.poster;
+              const railItems = [item.franchise, item.part, "Continue", "Watchlist", item.franchise, item.part, "Continue", "Watchlist"];
+
+              return (
+                <motion.div
+                  key={`${item.franchise}-${item.part}`}
+                  className={`continue-card ${visual?.toneClass || "franchise-tone-action"}`}
+                  initial={{ opacity: 0, y: 14 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-40px" }}
+                  transition={{ duration: 0.35, delay: index * 0.05, ease: [0.23, 1, 0.32, 1] }}
+                  whileHover={{ y: -3, scale: 1.01 }}
+                >
+                  <div className="continue-card-media-wrap" aria-hidden>
+                    {partPoster ? (
+                      <img
+                        src={partPoster}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="continue-card-media"
+                      />
+                    ) : (
+                      <div className="continue-card-media-fallback" />
+                    )}
+                    <div className="continue-card-shade" />
+                    <div className="continue-card-rail">
+                      <div className="continue-card-rail-track">
+                        {railItems.map((rail, railIndex) => (
+                          <span key={`${item.franchise}-${rail}-${railIndex}`}>{rail}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="continue-card-content">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-zinc-100">{item.franchise}</p>
+                      <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/25 px-2 py-0.5 text-[10px] text-zinc-300">
+                        <Clock3 className="h-3 w-3" />
+                        {item.progress}%
+                      </span>
+                    </div>
+                    <p className="mt-1 line-clamp-1 text-sm text-zinc-300">Next: {item.part}</p>
+
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                      <motion.div
+                        className="continue-card-progress"
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${item.progress}%` }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8, delay: 0.08 + index * 0.04, ease: [0.22, 1, 0.36, 1] }}
+                        aria-hidden
+                      />
+                    </div>
+
+                    <div className="mt-3 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-strong)]">
+                      <Play className="h-3 w-3" />
+                      Continue Arc
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </CardContent>
         </Card>
 
