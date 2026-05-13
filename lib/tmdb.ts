@@ -88,14 +88,14 @@ export async function searchMovie(title: string, year?: number): Promise<TmdbMov
   const params: Record<string, string> = { query: title, include_adult: "false" };
   if (year) params.year = String(year);
   const data = await tmdbFetch<TmdbSearchMovieResult>("/search/movie", params);
-  return data?.results[0] ?? null;
+  return pickBestMovieResult(data?.results ?? [], title, year);
 }
 
 export async function searchTv(title: string, year?: number): Promise<TmdbTv | null> {
   const params: Record<string, string> = { query: title, include_adult: "false" };
   if (year) params.first_air_date_year = String(year);
   const data = await tmdbFetch<TmdbSearchTvResult>("/search/tv", params);
-  return data?.results[0] ?? null;
+  return pickBestTvResult(data?.results ?? [], title, year);
 }
 
 // ── Images ───────────────────────────────────────────────────────
@@ -122,6 +122,38 @@ function pickBestLogo(images: TmdbImagesResult | null): string | null {
     .filter((l) => l.iso_639_1 === "en")
     .sort((a, b) => b.vote_average - a.vote_average);
   return en[0]?.file_path ?? images.logos[0]?.file_path ?? null;
+}
+
+function normalizeSearchTitle(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function pickBestMovieResult(results: TmdbMovie[], title: string, year?: number): TmdbMovie | null {
+  if (!results.length) return null;
+  const normalizedTitle = normalizeSearchTitle(title);
+  const exact = results.find((result) => normalizeSearchTitle(result.title) === normalizedTitle);
+  if (exact) return exact;
+
+  if (year) {
+    const yearMatch = results.find((result) => result.release_date?.startsWith(String(year)));
+    if (yearMatch) return yearMatch;
+  }
+
+  return results[0] ?? null;
+}
+
+function pickBestTvResult(results: TmdbTv[], title: string, year?: number): TmdbTv | null {
+  if (!results.length) return null;
+  const normalizedTitle = normalizeSearchTitle(title);
+  const exact = results.find((result) => normalizeSearchTitle(result.name) === normalizedTitle);
+  if (exact) return exact;
+
+  if (year) {
+    const yearMatch = results.find((result) => result.first_air_date?.startsWith(String(year)));
+    if (yearMatch) return yearMatch;
+  }
+
+  return results[0] ?? null;
 }
 
 // ── Resolved asset bundle ────────────────────────────────────────
