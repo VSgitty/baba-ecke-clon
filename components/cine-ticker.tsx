@@ -5,6 +5,7 @@ export function CineTicker() {
 
   return (
     <section
+      id="cine-ticker-root"
       className="w-full overflow-hidden border-y py-2.5"
       style={{
         borderColor: "rgba(245,176,52,0.1)",

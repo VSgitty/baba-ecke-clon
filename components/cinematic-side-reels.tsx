@@ -54,6 +54,17 @@ export function CinematicSideReels() {
       setVisible(window.innerWidth >= 1180 && rawGutter >= 58);
     };
 
+    // Store the document-relative offset of the ticker (stable, doesn't change with scroll)
+    let tickerDocumentTop = 0;
+    const measureTickerOffset = () => {
+      const ticker = document.getElementById("cine-ticker-root");
+      if (ticker) {
+        tickerDocumentTop = ticker.getBoundingClientRect().top + window.scrollY;
+      } else {
+        tickerDocumentTop = 0; // /franchises page: start from very top
+      }
+    };
+
     const updateFromScroll = () => {
       const scrollTop = window.scrollY;
       const doc = document.documentElement;
@@ -63,18 +74,10 @@ export function CinematicSideReels() {
       const velocity = Math.max(-1, Math.min(1, (target - previous) * 20));
       scrollY.set(previous + (target * 4200 - previous) * 0.075);
       scrollVelocity.set(velocity);
-    };
 
-    // Find start Y — use #reels-start sentinel (below hero) or fallback to 0 for /franchises
-    const measureRailTop = () => {
-      const sentinel = document.getElementById("reels-start");
-      if (sentinel) {
-        // getBoundingClientRect().top = viewport-relative Y — correct for a fixed-positioned child
-        const top = sentinel.getBoundingClientRect().top;
-        setRailTop(Math.max(0, top));
-      } else {
-        setRailTop(0);
-      }
+      // Recompute viewport-relative top each frame (= documentOffset - currentScrollY)
+      const viewportTop = Math.max(0, tickerDocumentTop - scrollTop);
+      setRailTop(viewportTop);
     };
 
     let frame = 0;
@@ -83,16 +86,29 @@ export function CinematicSideReels() {
       frame = window.requestAnimationFrame(tick);
     };
 
-    const handleResize = () => { recalcGutter(); measureRailTop(); };
+    const handleResize = () => { recalcGutter(); measureTickerOffset(); };
 
     recalcGutter();
-    measureRailTop();
+    // Measure after a short delay to let hero images/fonts settle
+    const t = setTimeout(() => {
+      measureTickerOffset();
+    }, 120);
     frame = window.requestAnimationFrame(tick);
     window.addEventListener("resize", handleResize);
 
+    // ResizeObserver on the ticker for layout shifts
+    const ticker = document.getElementById("cine-ticker-root");
+    let ro: ResizeObserver | undefined;
+    if (ticker) {
+      ro = new ResizeObserver(() => measureTickerOffset());
+      ro.observe(ticker);
+    }
+
     return () => {
+      clearTimeout(t);
       window.removeEventListener("resize", handleResize);
       window.cancelAnimationFrame(frame);
+      ro?.disconnect();
     };
   }, [scrollVelocity, scrollY]);
 
