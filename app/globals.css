@@ -677,16 +677,18 @@ h3,
   display: flex;
   align-items: stretch;
   justify-content: stretch;
-  opacity: 0.94;
-  filter: drop-shadow(0 24px 34px rgba(0, 0, 0, 0.42));
+  opacity: 0.72;
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.32));
 }
 
 .cinematic-side-reels__rail--left {
   left: 0;
+  justify-content: flex-start;
 }
 
 .cinematic-side-reels__rail--right {
   right: 0;
+  justify-content: flex-end;
 }
 
 .cinematic-side-reels__strip-shell {
@@ -694,8 +696,8 @@ h3,
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border-inline: 1px solid rgba(255, 255, 255, 0.14);
-  background: linear-gradient(180deg, rgba(5, 8, 16, 0.94), rgba(7, 12, 22, 0.82));
+  border-inline: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(4, 7, 14, 0.78), rgba(6, 10, 18, 0.68));
 }
 
 .cinematic-side-reels__strip-shell::before,
@@ -708,17 +710,17 @@ h3,
 
 .cinematic-side-reels__strip-shell::before {
   background:
-    linear-gradient(90deg, rgba(255,255,255,0.12), transparent 18%, transparent 82%, rgba(255,255,255,0.12)),
-    linear-gradient(180deg, rgba(255,255,255,0.18), transparent 12%, rgba(255,255,255,0.06) 56%, transparent 86%, rgba(255,255,255,0.2));
+    linear-gradient(90deg, rgba(255,255,255,0.06), transparent 18%, transparent 82%, rgba(255,255,255,0.06)),
+    linear-gradient(180deg, rgba(255,255,255,0.08), transparent 14%, rgba(255,255,255,0.04) 56%, transparent 86%, rgba(255,255,255,0.1));
   mix-blend-mode: screen;
-  opacity: 0.62;
+  opacity: 0.35;
 }
 
 .cinematic-side-reels__strip-shell::after {
   background:
-    radial-gradient(ellipse at 12% 24%, rgba(255,255,255,0.12), transparent 34%),
-    radial-gradient(ellipse at 84% 78%, rgba(255,255,255,0.12), transparent 36%);
-  opacity: 0.36;
+    radial-gradient(ellipse at 12% 24%, rgba(255,255,255,0.08), transparent 34%),
+    radial-gradient(ellipse at 84% 78%, rgba(255,255,255,0.08), transparent 36%);
+  opacity: 0.22;
 }
 
 .cinematic-side-reels__strip-run {
@@ -732,13 +734,14 @@ h3,
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, #040406 0 18%, transparent 18% 82%, #040406 82% 100%),
+    linear-gradient(90deg, #07080c 0 17%, transparent 17% 83%, #07080c 83% 100%),
     repeating-linear-gradient(
       180deg,
-      #060608 0 12px,
-      #ad9a7d 12px 108px,
-      #060608 108px 122px
+      #090b10 0 10px,
+      #827763 10px 98px,
+      #090b10 98px 110px
     );
+  opacity: 0.88;
 }
 
 .cinematic-side-reels__strip-pattern::before,
@@ -747,14 +750,14 @@ h3,
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 18%;
+  width: 17%;
   background:
     repeating-linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.98) 0 10px,
-      transparent 10px 26px
+      rgba(238, 240, 245, 0.55) 0 8px,
+      transparent 8px 22px
     );
-  opacity: 0.88;
+  opacity: 0.62;
 }
 
 .cinematic-side-reels__strip-pattern::before {
@@ -772,20 +775,21 @@ h3,
 .cinematic-side-reels__spool {
   position: absolute;
   left: 50%;
-  width: clamp(44px, 3vw, 58px);
-  height: clamp(44px, 3vw, 58px);
+  width: clamp(36px, 2.4vw, 48px);
+  height: clamp(36px, 2.4vw, 48px);
   transform: translateX(-50%);
   border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.26);
+  border: 1px solid rgba(255,255,255,0.18);
   background:
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.34) 0 8%, rgba(255,255,255,0.09) 12%, transparent 14%),
-    radial-gradient(circle at 30% 30%, rgba(255,255,255,0.22), transparent 34%),
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.28) 0 8%, rgba(255,255,255,0.07) 12%, transparent 14%),
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,0.16), transparent 34%),
     linear-gradient(145deg, rgba(14, 18, 28, 0.96), rgba(5, 8, 16, 0.98));
   box-shadow:
-    inset 0 0 0 3px rgba(255,255,255,0.06),
+    inset 0 0 0 3px rgba(255,255,255,0.04),
     inset 0 0 22px rgba(0,0,0,0.46),
-    0 0 18px rgba(0,0,0,0.38);
+    0 0 12px rgba(0,0,0,0.3);
   z-index: 2;
+  opacity: 0.82;
 }
 
 .cinematic-side-reels__spool::before,
@@ -805,11 +809,11 @@ h3,
 }
 
 .cinematic-side-reels__spool--top {
-  top: 1.2rem;
+  top: 1rem;
 }
 
 .cinematic-side-reels__spool--bottom {
-  bottom: 1.2rem;
+  bottom: 1rem;
 }
 
 @media (min-width: 1100px) {
