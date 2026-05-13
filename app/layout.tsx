@@ -5,6 +5,7 @@ import "@/app/globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { LenisProvider } from "@/components/lenis-provider";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -72,11 +73,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="de" suppressHydrationWarning>
       <body className={`${spaceGrotesk.variable} ${bebasNeue.variable} min-h-screen font-sans`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <div className="relative flex min-h-screen flex-col">
-            <SiteHeader />
-            <main className="flex-1">{children}</main>
-            <SiteFooter />
-          </div>
+          <LenisProvider>
+            <div className="relative flex min-h-screen flex-col">
+              <SiteHeader />
+              <main className="flex-1">{children}</main>
+              <SiteFooter />
+            </div>
+          </LenisProvider>
         </ThemeProvider>
       </body>
     </html>
