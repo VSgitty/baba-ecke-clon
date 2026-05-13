@@ -1205,6 +1205,75 @@ h3,
   isolation: isolate;
 }
 
+.franchise-live-row {
+  margin-top: 1.05rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.franchise-live-label {
+  margin: 0;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.62);
+}
+
+.franchise-cover-reel {
+  display: flex;
+  gap: 0.65rem;
+  max-width: min(60vw, 620px);
+  overflow-x: auto;
+  padding-bottom: 0.28rem;
+  scrollbar-width: thin;
+}
+
+.franchise-cover-reel::-webkit-scrollbar {
+  height: 6px;
+}
+
+.franchise-cover-reel::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.franchise-cover-chip {
+  position: relative;
+  width: 82px;
+  height: 118px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  overflow: hidden;
+  background: linear-gradient(160deg, rgba(12, 18, 34, 0.88), rgba(8, 12, 24, 0.96));
+  box-shadow:
+    0 14px 22px -18px rgba(0, 0, 0, 0.86),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.franchise-cover-chip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(4, 8, 16, 0.02), rgba(4, 8, 16, 0.42));
+}
+
+.franchise-cover-fallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 0.45rem;
+  font-size: 0.58rem;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.82);
+}
+
 .franchise-case-core {
   position: relative;
   min-height: 350px;
@@ -1254,7 +1323,7 @@ h3,
 
 .franchise-item-thumbnail {
   position: relative;
-  width: 52px;
+  width: 58px;
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -1262,7 +1331,7 @@ h3,
 .franchise-item-thumbnail-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(6, 9, 18, 0.0), rgba(6, 9, 18, 0.5));
+  background: linear-gradient(90deg, rgba(6, 9, 18, 0.04), rgba(6, 9, 18, 0.58));
 }
 
 .franchise-item-spine {
@@ -1276,6 +1345,7 @@ h3,
   padding: 0.65rem 0.7rem;
   display: grid;
   gap: 0.22rem;
+  min-width: 0;
 }
 
 .franchise-item-type {
@@ -1291,6 +1361,9 @@ h3,
   font-size: 0.9rem;
   line-height: 1.1;
   color: #eef2ff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .franchise-item-year {

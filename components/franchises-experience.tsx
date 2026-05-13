@@ -2,11 +2,16 @@
 
 import Image from "next/image";
 import { AnimatePresence, motion, useMotionTemplate, useMotionValue, useScroll, useTransform } from "framer-motion";
-import { ChevronDown, Clapperboard, Layers3, LibraryBig, Sparkles } from "lucide-react";
+import { ChevronDown, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { franchiseWorlds, type FranchiseWorldDef } from "@/data/franchise-worlds";
 import type { TmdbAssets } from "@/lib/tmdb";
+
+type FranchiseSectionAssets = {
+  hero: TmdbAssets;
+  catalog: TmdbAssets[];
+};
 
 
 function FranchiseSection({
@@ -20,7 +25,7 @@ function FranchiseSection({
 }: {
   world: FranchiseWorldDef;
   index: number;
-  assets: TmdbAssets;
+  assets: FranchiseSectionAssets;
   isActive: boolean;
   isLast: boolean;
   registerRef: (slug: string, el: HTMLElement | null) => void;
@@ -39,6 +44,7 @@ function FranchiseSection({
   const hazeY = useTransform(scrollYProgress, [0, 1], ["-14%", "14%"]);
   const fogOpacity = useTransform(scrollYProgress, [0, 0.5, 1], [0.2, 0.7, 0.4]);
   const titleY = useTransform(scrollYProgress, [0, 1], [22, -20]);
+  const reelY = useTransform(scrollYProgress, [0, 1], [18, -22]);
 
   const rotateX = useTransform(pointerY, [-0.5, 0.5], [8, -8]);
   const rotateY = useTransform(pointerX, [-0.5, 0.5], [-10, 10]);
@@ -87,7 +93,7 @@ function FranchiseSection({
       {/* Cinematic backdrop — TMDB or local fallback */}
       <motion.div className="absolute inset-0 z-0 scale-110" style={{ y: bgY }}>
         <Image
-          src={assets.backdropUrl ?? world.bgFallback}
+          src={assets.hero.backdropUrl ?? world.bgFallback}
           alt={`${world.title} cinematic backdrop`}
           fill
           className="object-cover opacity-55"
@@ -135,15 +141,15 @@ function FranchiseSection({
           </p>
 
           {/* TMDB Logo PNG if available, else plain title */}
-          {assets.logoUrl ? (
+          {assets.hero.logoUrl ? (
             <div className="my-3 max-w-[480px]">
               <Image
-                src={assets.logoUrl}
+                src={assets.hero.logoUrl}
                 alt={`${world.title} logo`}
                 width={480}
                 height={160}
                 className="h-auto max-h-[120px] w-auto object-contain object-left drop-shadow-[0_6px_22px_rgba(0,0,0,0.75)] sm:max-h-[148px]"
-                unoptimized={assets.logoUrl.endsWith(".svg")}
+                unoptimized={assets.hero.logoUrl.endsWith(".svg")}
               />
             </div>
           ) : (
@@ -154,17 +160,32 @@ function FranchiseSection({
 
           <p className="mt-3 max-w-[60ch] text-base text-zinc-200/85 sm:text-lg">{world.subline} · {world.motionLabel}</p>
 
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/[0.05] px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-zinc-300">
-              <Layers3 className="h-3 w-3" /> multi-layer parallax
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/[0.05] px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-zinc-300">
-              <LibraryBig className="h-3 w-3" /> collector case stack
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/[0.05] px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-zinc-300">
-              <Clapperboard className="h-3 w-3" /> cinematic transition
-            </span>
-          </div>
+          <motion.div className="franchise-live-row" style={{ y: reelY }}>
+            <p className="franchise-live-label" style={{ color: `${world.accent}` }}>Live TMDB Covers</p>
+            <div className="franchise-cover-reel" role="list" aria-label={`${world.title} Cover Reel`}>
+              {world.catalog.map((entry, i) => {
+                const posterUrl = assets.catalog[i]?.posterUrl;
+                return (
+                  <motion.div
+                    key={`${world.slug}-reel-${entry.title}`}
+                    className="franchise-cover-chip"
+                    role="listitem"
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-60px" }}
+                    transition={{ delay: i * 0.06, duration: 0.32 }}
+                    style={{ borderColor: `${world.accent}66` }}
+                  >
+                    {posterUrl ? (
+                      <Image src={posterUrl} alt={`${entry.title} cover`} fill className="object-cover" sizes="(max-width: 1024px) 90px, 120px" />
+                    ) : (
+                      <div className="franchise-cover-fallback">{entry.title}</div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
         </motion.div>
 
         <motion.div
@@ -191,11 +212,10 @@ function FranchiseSection({
                 whileHover={{ x: 16, y: -4, z: 24, rotateZ: 0.5 }}
                 transition={{ type: "spring", stiffness: 260, damping: 22 }}
               >
-                {/* Case poster thumbnail if first item has TMDB poster */}
-                {i === 0 && assets.posterUrl && (
+                {assets.catalog[i]?.posterUrl && (
                   <div className="franchise-item-thumbnail">
                     <Image
-                      src={assets.posterUrl}
+                      src={assets.catalog[i].posterUrl as string}
                       alt={entry.title}
                       fill
                       className="object-cover"
@@ -310,7 +330,7 @@ function FranchiseMiniMap({
   );
 }
 
-export function FranchisesExperience({ assetsMap }: { assetsMap: Record<string, TmdbAssets> }) {
+export function FranchisesExperience({ assetsMap }: { assetsMap: Record<string, FranchiseSectionAssets> }) {
   const [activeSlug, setActiveSlug] = useState<string | null>("intro");
   const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
   const introRef = useRef<HTMLElement | null>(null);
@@ -440,7 +460,7 @@ export function FranchisesExperience({ assetsMap }: { assetsMap: Record<string, 
             key={world.slug}
             world={world}
             index={index}
-            assets={assetsMap[world.slug] ?? { posterUrl: null, backdropUrl: null, logoUrl: null }}
+            assets={assetsMap[world.slug] ?? { hero: { posterUrl: null, backdropUrl: null, logoUrl: null }, catalog: [] }}
             isActive={activeSlug === world.slug}
             isLast={index === franchiseWorlds.length - 1}
             registerRef={registerSection}

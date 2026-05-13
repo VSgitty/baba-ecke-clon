@@ -9,6 +9,11 @@ import {
 } from "@/lib/tmdb";
 import { FranchisesExperience } from "@/components/franchises-experience";
 
+type FranchiseSectionAssets = {
+  hero: TmdbAssets;
+  catalog: TmdbAssets[];
+};
+
 export const metadata: Metadata = {
   title: "Franchises",
   description:
@@ -16,7 +21,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/franchises" }
 };
 
-async function fetchWorldAssets(slug: string, tmdb: (typeof franchiseWorlds)[0]["tmdb"]): Promise<TmdbAssets> {
+async function fetchWorldAssets(tmdb: (typeof franchiseWorlds)[0]["tmdb"]): Promise<TmdbAssets> {
   switch (tmdb.strategy) {
     case "collection":
       return resolveCollectionAssets(tmdb.collectionId, tmdb.fallbackTitle);
@@ -31,19 +36,51 @@ async function fetchWorldAssets(slug: string, tmdb: (typeof franchiseWorlds)[0][
   }
 }
 
+async function fetchCatalogEntryAssets(entry: (typeof franchiseWorlds)[0]["catalog"][number]): Promise<TmdbAssets> {
+  const title = entry.searchTitle ?? entry.title;
+  if (entry.type === "Serie") {
+    return resolveTvAssets(title, entry.year);
+  }
+  return resolveMovieAssets(title, entry.year);
+}
+
 export default async function FranchisesPage() {
-  // Fetch all franchise assets in parallel on the server
-  const settled = await Promise.allSettled(
-    franchiseWorlds.map((w) => fetchWorldAssets(w.slug, w.tmdb))
+  const worldSettled = await Promise.allSettled(
+    franchiseWorlds.map(async (world) => {
+      const [heroBase, catalogSettled] = await Promise.all([
+        fetchWorldAssets(world.tmdb),
+        Promise.allSettled(world.catalog.map((entry) => fetchCatalogEntryAssets(entry))),
+      ]);
+
+      const catalogAssets = catalogSettled.map((result) =>
+        result.status === "fulfilled"
+          ? result.value
+          : { posterUrl: null, backdropUrl: null, logoUrl: null }
+      );
+
+      const lead = catalogAssets[0] ?? { posterUrl: null, backdropUrl: null, logoUrl: null };
+      const hero: TmdbAssets = {
+        posterUrl: lead.posterUrl ?? heroBase.posterUrl,
+        backdropUrl: lead.backdropUrl ?? heroBase.backdropUrl,
+        logoUrl: heroBase.logoUrl ?? lead.logoUrl,
+      };
+
+      return { slug: world.slug, assets: { hero, catalog: catalogAssets } satisfies FranchiseSectionAssets };
+    })
   );
 
-  const assetsMap: Record<string, TmdbAssets> = {};
-  franchiseWorlds.forEach((w, i) => {
-    const result = settled[i];
-    assetsMap[w.slug] =
-      result?.status === "fulfilled"
-        ? result.value
-        : { posterUrl: null, backdropUrl: null, logoUrl: null };
+  const assetsMap: Record<string, FranchiseSectionAssets> = {};
+  worldSettled.forEach((result, index) => {
+    const slug = franchiseWorlds[index]?.slug;
+    if (!slug) return;
+
+    assetsMap[slug] =
+      result.status === "fulfilled"
+        ? result.value.assets
+        : {
+            hero: { posterUrl: null, backdropUrl: null, logoUrl: null },
+            catalog: franchiseWorlds[index].catalog.map(() => ({ posterUrl: null, backdropUrl: null, logoUrl: null }))
+          };
   });
 
   return <FranchisesExperience assetsMap={assetsMap} />;
