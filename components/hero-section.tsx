@@ -1,13 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useRef } from "react";
 import { motion, useMotionTemplate, useMotionValue, useScroll, useTransform } from "framer-motion";
-import { ArrowRight, PlayCircle } from "lucide-react";
-
-import { heroStats } from "@/data/content";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 export function HeroSection() {
@@ -43,7 +38,7 @@ export function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden pb-10 pt-12 sm:pt-16"
+      className="relative overflow-hidden pb-4 pt-0"
       onMouseMove={handlePointerMove}
       onMouseLeave={resetPointer}
     >
@@ -73,50 +68,16 @@ export function HeroSection() {
       </motion.div>
 
       <motion.div className="hero-parallax-fog absolute inset-0 -z-[5]" style={{ opacity: fogOpacity }} />
-      <div className="absolute inset-x-0 top-0 -z-[4] h-[32rem] bg-[radial-gradient(circle_at_15%_5%,rgba(255,186,45,0.26),transparent_42%),radial-gradient(circle_at_88%_0%,rgba(88,225,255,0.2),transparent_34%)]" />
+      <div className="absolute inset-x-0 top-0 -z-[4] h-[34rem] bg-[radial-gradient(circle_at_15%_5%,rgba(255,186,45,0.26),transparent_42%),radial-gradient(circle_at_88%_0%,rgba(88,225,255,0.2),transparent_34%)]" />
 
-      <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_1fr] lg:items-end lg:px-8">
-        <div className="animate-float-in space-y-6">
-          <Badge variant="muted" className="w-fit border-white/15 bg-white/5 text-zinc-200">
+      <div className="relative mx-auto h-[42vh] min-h-[260px] w-full max-w-[1800px] sm:h-[48vh] lg:h-[56vh]">
+        <div className="absolute inset-x-0 bottom-8 px-4 sm:px-8 lg:px-10">
+          <Badge variant="muted" className="mb-4 w-fit border-white/15 bg-white/5 text-zinc-200">
             NOW PLAYING
           </Badge>
-          <h1 className="max-w-[17ch] text-5xl leading-[0.96] text-zinc-50 sm:text-6xl lg:text-7xl">
-            Keine Standard-Filmseite. Eine persoenliche Filmwelt.
+          <h1 className="max-w-[42ch] text-3xl leading-[1.04] text-zinc-50 drop-shadow-[0_12px_20px_rgba(0,0,0,0.75)] sm:text-4xl lg:text-6xl">
+            watchlist, reviews, kritik, baba filme, babe serien/folgen und sogar kackfilme
           </h1>
-          <p className="max-w-[58ch] text-base text-zinc-300 sm:text-lg">
-            Watchlists, Reviews, Franchise-Tracking und deine Kommentare - alles hier.
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button asChild size="lg">
-              <Link href="/my-list">
-                Zur Sammlung
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="ghost">
-              <Link href="/streams">
-                Progress-System
-                <PlayCircle className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-
-        <div className="cine-panel cine-glow relative overflow-hidden rounded-3xl p-6">
-          <div className="relative">
-            <p className="text-sm font-medium text-zinc-300">Community Snapshot</p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-              {heroStats.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-md"
-                >
-                  <p className="text-3xl font-semibold tracking-tight text-zinc-50">{stat.value}</p>
-                  <p className="mt-1 text-sm text-zinc-300">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </section>

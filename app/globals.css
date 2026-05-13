@@ -175,6 +175,13 @@ h3,
 
 .catalog-shelf {
   perspective: 1200px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+.catalog-shelf > * {
+  scroll-snap-align: start;
 }
 
 .cover-card {
@@ -183,6 +190,7 @@ h3,
   transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
   transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
   box-shadow: 0 18px 36px -24px rgba(0, 0, 0, 0.7);
+  background: linear-gradient(180deg, rgba(11, 14, 24, 0.96), rgba(5, 8, 17, 0.98));
 }
 
 .cover-card:hover {
@@ -229,6 +237,10 @@ h3,
 
 .ticker-track {
   animation: ticker-run 42s linear infinite;
+}
+
+.movie-list-track {
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
 }
 
 .data-\[state\=open\]\:animate-accordion-down[data-state="open"] {

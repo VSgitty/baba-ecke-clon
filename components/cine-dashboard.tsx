@@ -338,17 +338,17 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
               ))}
             </div>
 
-            <div className="catalog-shelf grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="catalog-shelf flex gap-4 overflow-x-auto pb-4">
               {filteredCatalog.slice(0, 60).map((item) => {
                 const inWatchlist = Boolean(watchlist[item.id]);
                 return (
                   <article
                     key={item.id}
-                    className="cover-card overflow-hidden rounded-2xl border border-white/15 bg-white/[0.04] p-0"
+                    className="cover-card w-[172px] shrink-0 overflow-hidden rounded-xl border border-white/15 bg-white/[0.04] p-0"
                     onMouseMove={handleCoverMove}
                     onMouseLeave={resetCoverMove}
                   >
-                    <div className="relative h-40 w-full overflow-hidden bg-zinc-900">
+                    <div className="relative aspect-[2/3] w-full overflow-hidden bg-zinc-900">
                       {item.poster ? (
                         <img
                           src={item.poster}
@@ -364,9 +364,9 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                       <div className="cover-shine" aria-hidden />
                       <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent,rgba(5,8,18,0.82))]" />
                     </div>
-                    <div className="p-4">
-                    <div className="mb-2 flex items-center justify-between gap-2">
-                      <h3 className="line-clamp-1 text-sm font-semibold text-zinc-100">{item.title}</h3>
+                    <div className="p-3">
+                    <div className="mb-1.5 flex items-center justify-between gap-2">
+                      <h3 className="line-clamp-1 text-[1.05rem] font-semibold leading-tight text-[#e7ba3f]">{item.title}</h3>
                       {item.rating ? (
                         <span className="inline-flex items-center gap-1 text-xs text-amber-300">
                           <Star className="h-3.5 w-3.5 fill-current" />
@@ -375,19 +375,19 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                       ) : null}
                     </div>
 
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-[11px] text-zinc-400">
                       {item.type} | {item.genre} {item.year ? `| ${item.year}` : ""}
                     </p>
-                    <p className="mt-2 line-clamp-2 text-sm text-zinc-300">
+                    <p className="mt-1.5 line-clamp-2 text-xs leading-snug text-zinc-300">
                       {item.description || "Kein Beschreibungstext hinterlegt."}
                     </p>
 
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <Button size="sm" variant={inWatchlist ? "secondary" : "ghost"} onClick={() => toggleWatchlist(item)}>
+                    <div className="mt-2.5 flex flex-wrap gap-1.5">
+                      <Button size="sm" variant={inWatchlist ? "secondary" : "ghost"} className="h-8 px-2.5 text-xs" onClick={() => toggleWatchlist(item)}>
                         {inWatchlist ? "Gemerkt" : "Zur Watchlist"}
                       </Button>
                       {item.streamUrl ? (
-                        <Button size="sm" variant="outline" asChild>
+                        <Button size="sm" variant="outline" className="h-8 px-2.5 text-xs" asChild>
                           <a href={item.streamUrl} target="_blank" rel="noreferrer">
                             Stream
                             <ExternalLink className="h-3.5 w-3.5" />
