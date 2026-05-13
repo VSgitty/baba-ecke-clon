@@ -17,30 +17,45 @@ export const navItems = [
 ] as const;
 
 export const heroStats = [
-  { label: "Titel im Katalog", value: "200+" },
-  { label: "Franchise Boards", value: "14" },
-  { label: "Aktive Community", value: "3.8k" }
+  { label: "Titel", value: "200+" },
+  { label: "Watchlist Aktiv", value: "1.4k" },
+  { label: "Franchise Boards", value: "14" }
+];
+
+export const tickerTitles = [
+  "SAW X",
+  "THE SUBSTANCE",
+  "ARCANE S2",
+  "SCREAM VI",
+  "INTERSTELLAR",
+  "SQUID GAME",
+  "LOST",
+  "CLOVERFIELD",
+  "PULP FICTION",
+  "ALIEN: ROMULUS",
+  "THE MAGICIANS",
+  "PYRAMID GAME"
 ];
 
 export const featureItems: FeatureItem[] = [
   {
     title: "Cine Katalog",
-    description: "Filme und Serien schnell filtern, vergleichen und in Listen organisieren.",
+    description: "Deine komplette Film- und Serienwelt aus der Originalseite, jetzt mit klarer Premium-Hierarchie.",
     icon: "film"
   },
   {
     title: "Franchise Tracker",
-    description: "Fortschritt, Bewertungen und Reihenfolge fuer ganze Universen zentral tracken.",
+    description: "Der bekannte Tracker bleibt, aber mit moderner Bedienung, besserer Lesbarkeit und sauberen States.",
     icon: "spark"
   },
   {
     title: "Community Pulse",
-    description: "Sehen, was gerade trendet und welche Titel in der Community diskutiert werden.",
+    description: "Aktivitaet, Trends und persoenlicher Stand bleiben sichtbar, nur hochwertiger inszeniert.",
     icon: "users"
   },
   {
     title: "Smart Roulette",
-    description: "In Sekunden den naechsten Film finden, mit sinnvollen Filtern statt Zufall ohne Kontext.",
+    description: "Filter setzen und den naechsten Film oder die naechste Serie in Sekunden ziehen.",
     icon: "zap"
   }
 ];

@@ -14,13 +14,16 @@ export function SiteHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-black/5 bg-white/60 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/55">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#090d18]/72 backdrop-blur-xl">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--brand-soft)] text-[var(--brand)]">
-            BE
+        <Link href="/" className="flex items-center gap-3 font-semibold tracking-tight">
+          <span className="grid h-10 w-10 place-items-center rounded-xl border border-white/15 bg-[var(--brand-soft)] text-base text-[var(--brand)]">
+            🎞
           </span>
-          <span className="text-sm sm:text-base">baba-ecke</span>
+          <div className="leading-tight">
+            <p className="text-[10px] tracking-[0.28em] text-[var(--brand)]">BABA ECKE</p>
+            <p className="text-xs text-zinc-300 sm:text-sm">cineastische community</p>
+          </div>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
@@ -29,8 +32,8 @@ export function SiteHeader() {
               key={item.href}
               href={item.href}
               className={cn(
-                "rounded-full px-4 py-2 text-sm text-muted-foreground transition hover:text-foreground",
-                pathname === item.href && "bg-black/5 text-foreground dark:bg-white/10"
+                "rounded-full px-4 py-2 text-sm text-zinc-400 transition hover:text-zinc-100",
+                pathname === item.href && "bg-white/10 text-zinc-50"
               )}
             >
               {item.label}
@@ -41,7 +44,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <Button asChild className="hidden md:inline-flex">
-            <Link href="/my-list">Jetzt starten</Link>
+            <Link href="/my-list">Progress-System</Link>
           </Button>
 
           <Sheet>
@@ -57,15 +60,15 @@ export function SiteHeader() {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "block rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground",
-                      pathname === item.href && "bg-muted text-foreground"
+                      "block rounded-xl px-4 py-3 text-sm font-medium text-zinc-300 transition hover:bg-white/10 hover:text-white",
+                      pathname === item.href && "bg-white/10 text-white"
                     )}
                   >
                     {item.label}
                   </Link>
                 ))}
                 <Button asChild className="mt-3 w-full">
-                  <Link href="/my-list">Watchlist oeffnen</Link>
+                  <Link href="/my-list">Zur My List</Link>
                 </Button>
               </div>
             </SheetContent>

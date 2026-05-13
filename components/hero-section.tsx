@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, PlayCircle } from "lucide-react";
 
@@ -7,49 +8,62 @@ import { Badge } from "@/components/ui/badge";
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden pb-10 pt-14 sm:pt-20">
-      <div className="absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(circle_at_15%_5%,rgba(15,140,122,0.20),transparent_45%),radial-gradient(circle_at_95%_0%,rgba(88,100,255,0.16),transparent_36%)]" />
+    <section className="relative overflow-hidden pb-10 pt-12 sm:pt-16">
+      <div className="absolute inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(circle_at_15%_5%,rgba(255,186,45,0.22),transparent_42%),radial-gradient(circle_at_88%_0%,rgba(88,225,255,0.18),transparent_34%)]" />
 
-      <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
+      <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_1fr] lg:items-end lg:px-8">
         <div className="animate-float-in space-y-6">
-          <Badge variant="muted" className="w-fit">
-            Premium Relaunch 2026
+          <Badge variant="muted" className="w-fit border-white/15 bg-white/5 text-zinc-200">
+            NOW PLAYING
           </Badge>
-          <h1 className="max-w-[15ch] text-4xl font-semibold leading-[1.02] tracking-tight sm:text-5xl lg:text-6xl">
-            Eine cineastische Community. Neu gedacht.
+          <h1 className="max-w-[17ch] text-5xl leading-[0.96] text-zinc-50 sm:text-6xl lg:text-7xl">
+            Keine Standard-Filmseite. Eine persoenliche Filmwelt.
           </h1>
-          <p className="max-w-[58ch] text-base text-muted-foreground sm:text-lg">
-            Die bekannte baba-ecke Struktur bleibt erhalten, aber mit modernem Interface,
-            schneller Navigation und hochwertigem Erlebnis auf allen Geraeten.
+          <p className="max-w-[58ch] text-base text-zinc-300 sm:text-lg">
+            Watchlists, Reviews, Franchise-Tracking und deine Kommentare - alles hier.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <Button asChild size="lg">
               <Link href="/my-list">
-                Zur My List
+                Zur Sammlung
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="ghost">
               <Link href="/streams">
-                Streams ansehen
+                Progress-System
                 <PlayCircle className="h-4 w-4" />
               </Link>
             </Button>
           </div>
         </div>
 
-        <div className="rounded-3xl border border-black/5 bg-white/75 p-6 shadow-[0_40px_80px_-40px_rgba(16,24,40,0.35)] backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-900/75">
-          <p className="text-sm font-medium text-muted-foreground">Community Snapshot</p>
+        <div className="cine-panel cine-glow relative overflow-hidden rounded-3xl p-6">
+          <div className="absolute inset-0">
+            <Image
+              src="/c/header.jpg"
+              alt="Baba Ecke Header"
+              fill
+              priority
+              className="object-cover opacity-40"
+              sizes="(max-width: 1024px) 100vw, 50vw"
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,8,18,0.35),rgba(5,8,18,0.88))]" />
+          </div>
+
+          <div className="relative">
+            <p className="text-sm font-medium text-zinc-300">Community Snapshot</p>
           <div className="mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
             {heroStats.map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-2xl border border-black/5 bg-white/90 p-4 dark:border-white/10 dark:bg-zinc-950/60"
+                className="rounded-2xl border border-white/15 bg-white/5 p-4 backdrop-blur-md"
               >
-                <p className="text-3xl font-semibold tracking-tight">{stat.value}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{stat.label}</p>
+                <p className="text-3xl font-semibold tracking-tight text-zinc-50">{stat.value}</p>
+                <p className="mt-1 text-sm text-zinc-300">{stat.label}</p>
               </div>
             ))}
+          </div>
           </div>
         </div>
       </div>

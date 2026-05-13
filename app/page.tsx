@@ -2,6 +2,7 @@ import Script from "next/script";
 
 import { getCatalogItems } from "@/lib/catalog";
 import { HeroSection } from "@/components/hero-section";
+import { CineTicker } from "@/components/cine-ticker";
 import { FeatureGrid } from "@/components/feature-grid";
 import { CineDashboard } from "@/components/cine-dashboard";
 import { TestimonialsSection } from "@/components/testimonials-section";
@@ -17,7 +18,9 @@ export default function HomePage() {
     name: "Baba Ecke",
     url: "https://baba-ecke.de",
     description: "Premium Cine Community Plattform mit Katalog, Franchise Tracking und Watchlist.",
-    inLanguage: "de-DE"
+    inLanguage: "de-DE",
+    image: "https://baba-ecke.de/c/header.jpg",
+    sameAs: ["https://github.com/VSgitty/baba-ecke-clon"]
   };
 
   return (
@@ -29,6 +32,7 @@ export default function HomePage() {
       />
 
       <HeroSection />
+  <CineTicker />
       <FeatureGrid />
       <CineDashboard catalog={catalog} />
       <TestimonialsSection />

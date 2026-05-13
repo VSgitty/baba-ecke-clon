@@ -141,34 +141,34 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
   return (
     <div className="space-y-8">
       <section className="mx-auto grid w-full max-w-7xl gap-4 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
-        <Card>
+        <Card className="cine-panel">
           <CardHeader className="pb-2">
             <CardDescription>Gesamtkatalog</CardDescription>
-            <CardTitle className="text-3xl">{catalog.length}</CardTitle>
+            <CardTitle className="text-3xl text-zinc-50">{catalog.length}</CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="cine-panel">
           <CardHeader className="pb-2">
             <CardDescription>Watchlist</CardDescription>
-            <CardTitle className="text-3xl">{Object.keys(watchlist).length}</CardTitle>
+            <CardTitle className="text-3xl text-zinc-50">{Object.keys(watchlist).length}</CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="cine-panel">
           <CardHeader className="pb-2">
             <CardDescription>Continue Watching</CardDescription>
-            <CardTitle className="text-3xl">{continueWatching.length}</CardTitle>
+            <CardTitle className="text-3xl text-zinc-50">{continueWatching.length}</CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="cine-panel">
           <CardHeader className="pb-2">
             <CardDescription>Gefilterte Titel</CardDescription>
-            <CardTitle className="text-3xl">{filteredCatalog.length}</CardTitle>
+            <CardTitle className="text-3xl text-zinc-50">{filteredCatalog.length}</CardTitle>
           </CardHeader>
         </Card>
       </section>
 
       <section className="mx-auto grid w-full max-w-7xl gap-4 px-4 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
-        <Card>
+        <Card className="cine-panel">
           <CardHeader>
             <CardTitle>Weiter schauen</CardTitle>
             <CardDescription>Naechste sinnvolle Schritte ueber deine Franchises hinweg.</CardDescription>
@@ -177,11 +177,11 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
             {continueWatching.map((item) => (
               <div
                 key={`${item.franchise}-${item.part}`}
-                className="rounded-xl border border-black/5 bg-black/[0.02] p-3 dark:border-white/10 dark:bg-white/[0.03]"
+                className="rounded-xl border border-white/15 bg-white/[0.04] p-3"
               >
-                <p className="text-sm font-medium">{item.franchise}</p>
-                <p className="text-sm text-muted-foreground">Next: {item.part}</p>
-                <div className="mt-3 h-2 rounded-full bg-black/5 dark:bg-white/10">
+                <p className="text-sm font-medium text-zinc-100">{item.franchise}</p>
+                <p className="text-sm text-zinc-300">Next: {item.part}</p>
+                <div className="mt-3 h-2 rounded-full bg-white/10">
                   <div
                     className="h-full rounded-full bg-[var(--brand)]"
                     style={{ width: `${item.progress}%` }}
@@ -193,7 +193,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="cine-panel">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Dice5 className="h-5 w-5 text-[var(--brand)]" />
@@ -205,16 +205,16 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
             <Button onClick={spinRoulette} className="w-full">
               Spin
             </Button>
-            <div className="rounded-xl border border-black/5 bg-black/[0.02] p-3 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className="rounded-xl border border-white/15 bg-white/[0.04] p-3">
               {roulettePick ? (
                 <>
-                  <p className="font-medium">{roulettePick.title}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="font-medium text-zinc-100">{roulettePick.title}</p>
+                  <p className="text-sm text-zinc-300">
                     {roulettePick.type} | {roulettePick.genre}
                   </p>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">Noch kein Spin ausgefuehrt.</p>
+                <p className="text-sm text-zinc-300">Warte auf den ersten Spin...</p>
               )}
             </div>
           </CardContent>
@@ -222,7 +222,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
       </section>
 
       <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <Card>
+        <Card className="cine-panel">
           <CardHeader>
             <CardTitle>Franchise Tracker</CardTitle>
             <CardDescription>Progress pro Reihe mit schnellem Toggle fuer gesehene Teile.</CardDescription>
@@ -234,16 +234,16 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
               return (
                 <div
                   key={franchise.slug}
-                  className="rounded-2xl border border-black/5 bg-black/[0.02] p-4 dark:border-white/10 dark:bg-white/[0.03]"
+                  className="rounded-2xl border border-white/15 bg-white/[0.04] p-4"
                 >
                   <div className="mb-3 flex items-center justify-between">
-                    <p className="font-medium">{franchise.title}</p>
+                    <p className="font-medium text-zinc-100">{franchise.title}</p>
                     <Badge variant="muted">{progress}%</Badge>
                   </div>
                   <div className="space-y-2">
                     {franchise.parts.map((part) => (
                       <label key={part.id} className="flex items-center justify-between gap-3 rounded-lg px-1 py-1.5">
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-sm text-zinc-300">
                           {part.title} ({part.year})
                         </span>
                         <input
@@ -263,7 +263,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
       </section>
 
       <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <Card>
+        <Card className="cine-panel">
           <CardHeader>
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
@@ -293,9 +293,9 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                   Serien
                 </Button>
                 <div className="relative">
-                  <Filter className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Filter className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
                   <select
-                    className="h-9 rounded-full border border-border bg-background pl-8 pr-3 text-sm"
+                    className="h-9 rounded-full border border-white/15 bg-white/5 pl-8 pr-3 text-sm"
                     value={genreFilter}
                     onChange={(event) => setGenreFilter(event.target.value)}
                     aria-label="Genre Filter"
@@ -315,10 +315,10 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
               {communityPulse.map((entry) => (
                 <div
                   key={entry.label}
-                  className="rounded-xl border border-black/5 bg-black/[0.02] p-3 dark:border-white/10 dark:bg-white/[0.03]"
+                  className="rounded-xl border border-white/15 bg-white/[0.04] p-3"
                 >
-                  <p className="text-xs text-muted-foreground">{entry.label}</p>
-                  <p className="text-xl font-semibold">{entry.value}</p>
+                  <p className="text-xs text-zinc-400">{entry.label}</p>
+                  <p className="text-xl font-semibold text-zinc-100">{entry.value}</p>
                 </div>
               ))}
             </div>
@@ -329,22 +329,37 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                 return (
                   <article
                     key={item.id}
-                    className="rounded-2xl border border-black/5 bg-black/[0.02] p-4 transition hover:border-black/15 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/25"
+                    className="overflow-hidden rounded-2xl border border-white/15 bg-white/[0.04] p-0 transition hover:border-[var(--brand)]"
                   >
+                    <div className="relative h-40 w-full overflow-hidden bg-zinc-900">
+                      {item.poster ? (
+                        <img
+                          src={item.poster}
+                          alt={`${item.title} Cover`}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="grid h-full w-full place-items-center text-xs text-zinc-500">Kein Cover</div>
+                      )}
+                      <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent,rgba(5,8,18,0.82))]" />
+                    </div>
+                    <div className="p-4">
                     <div className="mb-2 flex items-center justify-between gap-2">
-                      <h3 className="line-clamp-1 text-sm font-semibold">{item.title}</h3>
+                      <h3 className="line-clamp-1 text-sm font-semibold text-zinc-100">{item.title}</h3>
                       {item.rating ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                        <span className="inline-flex items-center gap-1 text-xs text-amber-300">
                           <Star className="h-3.5 w-3.5 fill-current" />
                           {item.rating.toFixed(1)}
                         </span>
                       ) : null}
                     </div>
 
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-zinc-400">
                       {item.type} | {item.genre} {item.year ? `| ${item.year}` : ""}
                     </p>
-                    <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                    <p className="mt-2 line-clamp-2 text-sm text-zinc-300">
                       {item.description || "Kein Beschreibungstext hinterlegt."}
                     </p>
 
@@ -361,6 +376,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                         </Button>
                       ) : null}
                     </div>
+                    </div>
                   </article>
                 );
               })}
@@ -370,7 +386,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
       </section>
 
       <section className="mx-auto grid w-full max-w-7xl gap-3 px-4 pb-4 sm:grid-cols-3 sm:px-6 lg:px-8">
-        <Card className="sm:col-span-2">
+        <Card className="cine-panel sm:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Flame className="h-4 w-4 text-[var(--brand)]" />
@@ -386,7 +402,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
             ))}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="cine-panel">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Sparkles className="h-4 w-4 text-[var(--brand)]" />

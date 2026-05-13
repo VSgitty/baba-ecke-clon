@@ -1,14 +1,21 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Bebas_Neue, Space_Grotesk } from "next/font/google";
 
 import "@/app/globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
-const jakarta = Plus_Jakarta_Sans({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-jakarta",
+  variable: "--font-space-grotesk",
+  display: "swap"
+});
+
+const bebasNeue = Bebas_Neue({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-bebas-neue",
   display: "swap"
 });
 
@@ -17,18 +24,43 @@ const siteUrl = "https://baba-ecke.de";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Baba Ecke | Cine Community Relaunch",
+    default: "Baba Ecke | Cine Community",
     template: "%s | Baba Ecke"
   },
   description:
-    "Moderne Premium-Neuinterpretation von baba-ecke.de mit schneller Navigation, klarer Struktur und hochwertigem Cine-UI.",
+    "Cine Community mit Charakter: Watchlists, Reviews, Franchise-Tracking und Streams in einer modernen Premium-Experience.",
+  keywords: [
+    "Baba Ecke",
+    "Cine Community",
+    "Film Katalog",
+    "Franchise Tracker",
+    "Watchlist",
+    "Streams"
+  ],
+  icons: {
+    icon: "/c/favicon.png"
+  },
   openGraph: {
-    title: "Baba Ecke 2026",
-    description: "Cine Katalog, Franchise Tracking und Community Pulse in einer modernen, performanten Plattform.",
+    title: "Baba Ecke | Cine Community",
+    description: "Die modernisierte Premium-Version von baba-ecke.de mit vertrauter Markenwelt und starker UX.",
     url: siteUrl,
     siteName: "Baba Ecke",
     locale: "de_DE",
-    type: "website"
+    type: "website",
+    images: [
+      {
+        url: "/c/header.jpg",
+        width: 1600,
+        height: 900,
+        alt: "Baba Ecke Hero Visual"
+      }
+    ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Baba Ecke | Cine Community",
+    description: "Premium-Upgrade der bekannten baba-ecke Filmwelt.",
+    images: ["/c/header.jpg"]
   },
   alternates: {
     canonical: "/"
@@ -38,8 +70,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="de" suppressHydrationWarning>
-      <body className={`${jakarta.variable} min-h-screen font-sans`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <body className={`${spaceGrotesk.variable} ${bebasNeue.variable} min-h-screen font-sans`}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <div className="relative flex min-h-screen flex-col">
             <SiteHeader />
             <main className="flex-1">{children}</main>
