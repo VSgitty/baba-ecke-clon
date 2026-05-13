@@ -15,8 +15,8 @@ export function CinematicSideReels() {
   const [activeAccent, setActiveAccent] = useState(DEFAULT_ACCENT);
   const [activeGlow, setActiveGlow] = useState("rgba(245, 176, 52, 0.14)");
   const [visible, setVisible] = useState(false);
-  const [railTop, setRailTop] = useState<number>(0);
   const [gutterWidth, setGutterWidth] = useState(0);
+  const railTop = useMotionValue(0);
 
   const scrollY = useMotionValue(0);
   const scrollVelocity = useMotionValue(0);
@@ -78,13 +78,17 @@ export function CinematicSideReels() {
 
       // Recompute viewport-relative top each frame (= documentOffset - currentScrollY)
       const viewportTop = Math.max(0, tickerDocumentTop - scrollTop);
-      setRailTop(viewportTop);
+      railTop.set(viewportTop);
     };
-
-    let frame = 0;
-    const tick = () => {
-      updateFromScroll();
-      frame = window.requestAnimationFrame(tick);
+    let raf = 0;
+    let ticking = false;
+    const scheduleUpdate = () => {
+      if (ticking) return;
+      ticking = true;
+      raf = window.requestAnimationFrame(() => {
+        updateFromScroll();
+        ticking = false;
+      });
     };
 
     const handleResize = () => { recalcGutter(); measureTickerOffset(); };
@@ -93,8 +97,9 @@ export function CinematicSideReels() {
     // Measure after a short delay to let hero images/fonts settle
     const t = setTimeout(() => {
       measureTickerOffset();
+      updateFromScroll();
     }, 120);
-    frame = window.requestAnimationFrame(tick);
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
     window.addEventListener("resize", handleResize);
 
     // ResizeObserver on the ticker for layout shifts
@@ -107,11 +112,12 @@ export function CinematicSideReels() {
 
     return () => {
       clearTimeout(t);
+      window.removeEventListener("scroll", scheduleUpdate);
       window.removeEventListener("resize", handleResize);
-      window.cancelAnimationFrame(frame);
+      if (raf) window.cancelAnimationFrame(raf);
       ro?.disconnect();
     };
-  }, [scrollVelocity, scrollY]);
+  }, [railTop, scrollVelocity, scrollY]);
 
   useEffect(() => {
     const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-franchise-slug]"));
@@ -143,7 +149,7 @@ export function CinematicSideReels() {
 
   return (
     <div className="cinematic-side-reels" aria-hidden="true">
-      <div className="cinematic-side-reels__rail cinematic-side-reels__rail--left" style={{ width: gutterWidth, top: railTop }}>
+      <motion.div className="cinematic-side-reels__rail cinematic-side-reels__rail--left" style={{ width: gutterWidth, top: railTop }}>
         <motion.div className="cinematic-side-reels__strip-shell" style={{ width: stripWidth, boxShadow: `inset 0 0 0 1px ${activeAccent}2d, 0 0 22px ${activeGlow}` }}>
           <motion.div className="cinematic-side-reels__strip-run" style={{ y: reelShift }}>
             <div className="cinematic-side-reels__strip-pattern" />
@@ -152,9 +158,9 @@ export function CinematicSideReels() {
 
         <motion.div className="cinematic-side-reels__spool cinematic-side-reels__spool--top" style={{ rotate: spoolRotate, borderColor: activeAccent }} />
         <motion.div className="cinematic-side-reels__spool cinematic-side-reels__spool--bottom" style={{ rotate: spoolRotate, borderColor: activeAccent }} />
-      </div>
+      </motion.div>
 
-      <div className="cinematic-side-reels__rail cinematic-side-reels__rail--right" style={{ width: gutterWidth, top: railTop }}>
+      <motion.div className="cinematic-side-reels__rail cinematic-side-reels__rail--right" style={{ width: gutterWidth, top: railTop }}>
         <motion.div className="cinematic-side-reels__strip-shell" style={{ width: stripWidth, boxShadow: `inset 0 0 0 1px ${activeAccent}2d, 0 0 22px ${activeGlow}` }}>
           <motion.div className="cinematic-side-reels__strip-run" style={{ y: reelReverseShift }}>
             <div className="cinematic-side-reels__strip-pattern cinematic-side-reels__strip-pattern--reverse" />
@@ -163,7 +169,7 @@ export function CinematicSideReels() {
 
         <motion.div className="cinematic-side-reels__spool cinematic-side-reels__spool--top" style={{ rotate: spoolReverseRotate, borderColor: activeAccent }} />
         <motion.div className="cinematic-side-reels__spool cinematic-side-reels__spool--bottom" style={{ rotate: spoolReverseRotate, borderColor: activeAccent }} />
-      </div>
+      </motion.div>
 
       <motion.div
         className="cinematic-side-reels__glare"

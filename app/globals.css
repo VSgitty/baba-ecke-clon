@@ -1140,6 +1140,9 @@ h3,
 .franchise-world {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  content-visibility: auto;
+  contain-intrinsic-size: 980px;
+  contain: layout paint style;
 }
 
 .franchise-haze {
