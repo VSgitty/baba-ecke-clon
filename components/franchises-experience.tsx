@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { AnimatePresence, motion, useMotionTemplate, useMotionValue, useScroll, useTransform } from "framer-motion";
-import { ChevronDown, Play, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Play, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { franchiseWorlds, type FranchiseWorldDef } from "@/data/franchise-worlds";
@@ -48,6 +48,9 @@ function FranchiseSection({
   const carouselX = useTransform(scrollYProgress, [0, 1], [-16, 16]);
   const carouselY = useTransform(scrollYProgress, [0, 1], [18, -14]);
   const [activeCase, setActiveCase] = useState(0);
+  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+  const catalogLength = world.catalog.length;
+  const autoplayBeat = useRef(0);
 
   const rotateX = useTransform(pointerY, [-0.5, 0.5], [8, -8]);
   const rotateY = useTransform(pointerX, [-0.5, 0.5], [-10, 10]);
@@ -78,6 +81,45 @@ function FranchiseSection({
     pointerY.set(0);
   }
 
+  const goToCase = useCallback(
+    (next: number) => {
+      if (!catalogLength) return;
+      setActiveCase((next + catalogLength) % catalogLength);
+    },
+    [catalogLength]
+  );
+
+  const getRelativeDelta = useCallback(
+    (targetIndex: number) => {
+      if (!catalogLength) return 0;
+      let delta = targetIndex - activeCase;
+      if (delta > catalogLength / 2) delta -= catalogLength;
+      if (delta < -catalogLength / 2) delta += catalogLength;
+      return delta;
+    },
+    [activeCase, catalogLength]
+  );
+
+  useEffect(() => {
+    if (!isActive || isCarouselPaused || catalogLength < 2) return;
+    let timer: number | null = null;
+    const rhythm = [1800, 2300, 2600, 2100];
+
+    const schedule = () => {
+      const delay = rhythm[autoplayBeat.current % rhythm.length];
+      autoplayBeat.current += 1;
+      timer = window.setTimeout(() => {
+        setActiveCase((prev) => (prev + 1) % catalogLength);
+        schedule();
+      }, delay);
+    };
+
+    schedule();
+    return () => {
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [catalogLength, isActive, isCarouselPaused]);
+
   useEffect(() => {
     registerRef(world.slug, sectionRef.current);
     return () => registerRef(world.slug, null);
@@ -88,7 +130,7 @@ function FranchiseSection({
       ref={sectionRef}
       id={`franchise-section-${world.slug}`}
       data-franchise-slug={world.slug}
-      className="franchise-world relative isolate min-h-[94svh] overflow-clip px-4 py-12 sm:px-7 lg:px-10"
+      className="franchise-world relative isolate min-h-[94svh] overflow-clip px-4 pb-12 pt-24 sm:px-7 lg:px-10 lg:pb-10 lg:pt-36"
       style={{
         background: assets.hero.backdropUrl
           ? `linear-gradient(160deg, ${world.tone}, rgba(2,6,14,0.92) 38%, rgba(2,4,10,0.98)), radial-gradient(circle at 50% 10%, ${world.atmosphere}, transparent 58%)`
@@ -140,7 +182,7 @@ function FranchiseSection({
         ))}
       </div>
 
-      <div className="relative z-10 mx-auto grid w-full max-w-[1560px] gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+      <div className="relative z-10 mx-auto grid w-full max-w-[1560px] gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
         <motion.div style={{ y: titleY }} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}>
           <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/30 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-200">
             <Sparkles className="h-3 w-3" style={{ color: world.accent }} />
@@ -231,7 +273,11 @@ function FranchiseSection({
         <motion.div
           className="franchise-case-shell group relative mx-auto w-full max-w-[540px]"
           onMouseMove={onMove}
-          onMouseLeave={onLeave}
+          onMouseLeave={() => {
+            onLeave();
+            setIsCarouselPaused(false);
+          }}
+          onMouseEnter={() => setIsCarouselPaused(true)}
           style={{ perspective: 1400 }}
           initial={{ opacity: 0, y: 26 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -242,46 +288,98 @@ function FranchiseSection({
             <div className="franchise-case-glow" style={{ background: `radial-gradient(circle at ${shineX} ${shineY}, ${world.glow}, transparent 58%)` }} />
 
             {world.catalog.map((entry, i) => {
-              const isActiveCase = i === activeCase;
+              const delta = getRelativeDelta(i);
+              const absDelta = Math.abs(delta);
+              const isActiveCase = absDelta === 0;
+              const posterUrl = assets.catalog[i]?.posterUrl;
+              const spread = delta * 106;
+              const lift = isActiveCase ? -14 : absDelta === 1 ? 8 : 22;
+              const depth = isActiveCase ? 0 : absDelta === 1 ? -75 : -130;
+              const scale = isActiveCase ? 1 : absDelta === 1 ? 0.88 : 0.76;
+              const rotate = delta * -30;
+
               return (
-              <motion.article
+              <motion.button
                 key={`${world.slug}-${entry.title}`}
-                className="franchise-item-case"
+                type="button"
+                className="franchise-coverflow-card"
                 style={{
-                  transform: `translate3d(${i * 34}px, ${i * 18}px, ${-i * 34}px) rotateY(${-14 + i * 4}deg) rotateZ(${(i % 2 === 0 ? -1 : 1) * 0.55}deg)`,
-                  borderColor: `${world.accent}55`
+                  zIndex: 100 - absDelta,
+                  borderColor: isActiveCase ? `${world.accent}cc` : `${world.accent}66`,
+                  boxShadow: isActiveCase ? `0 34px 60px -22px ${world.glow}` : "0 16px 34px -22px rgba(0,0,0,0.84)"
                 }}
-                whileHover={{ x: 18, y: -14, z: 48, rotateY: 0, rotateZ: 0.8, scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 260, damping: 22 }}
-                onHoverStart={() => setActiveCase(i)}
+                initial={false}
                 animate={
-                  isActiveCase
-                    ? { scale: 1.07, z: 54, x: 16, y: -6, boxShadow: `0 34px 56px -26px ${world.glow}` }
-                    : { scale: 1, z: 0, x: 0, boxShadow: "0 12px 24px -18px rgba(0,0,0,0.78)" }
+                  absDelta > 2
+                    ? { opacity: 0, pointerEvents: "none", transform: "translate3d(0px, 18px, -180px) rotateY(0deg) scale(0.7)" }
+                    : {
+                        opacity: 1,
+                        pointerEvents: "auto",
+                        transform: `translate3d(${spread}px, ${lift}px, ${depth}px) rotateY(${rotate}deg) scale(${isActiveCase ? 1.14 : scale})`
+                      }
                 }
+                transition={{ duration: 0.78, ease: [0.22, 1, 0.36, 1] }}
+                onClick={() => goToCase(i)}
               >
-                {assets.catalog[i]?.posterUrl && (
-                  <div className="franchise-item-thumbnail">
+                <div className="franchise-coverflow-poster">
+                  {posterUrl ? (
                     <Image
-                      src={assets.catalog[i].posterUrl as string}
+                      src={posterUrl}
                       alt={entry.title}
                       fill
                       className="object-cover"
-                      sizes="80px"
+                      sizes="(max-width: 1280px) 180px, 240px"
                     />
-                    <div className="franchise-item-thumbnail-overlay" />
-                  </div>
-                )}
-                <div className="franchise-item-spine" style={{ background: `linear-gradient(180deg, ${world.accent}55, rgba(10,12,20,0.75))` }} />
-                <div className="franchise-item-meta">
+                  ) : (
+                    <div className="franchise-coverflow-fallback">{entry.title}</div>
+                  )}
+                  <div className="franchise-coverflow-poster-overlay" />
+                </div>
+
+                <div className="franchise-coverflow-meta">
                   <p className="franchise-item-type">{entry.type}</p>
                   <p className="franchise-item-title">{entry.title}</p>
                   <p className="franchise-item-year">{entry.year}</p>
                 </div>
+                <div className="franchise-coverflow-floor" style={{ opacity: isActiveCase ? 0.8 : 0.36 }} />
                 <div className="franchise-item-holo" />
-              </motion.article>
+              </motion.button>
               );
             })}
+
+            <div className="franchise-coverflow-controls">
+              <button
+                type="button"
+                className="franchise-coverflow-nav"
+                onClick={() => goToCase(activeCase - 1)}
+                aria-label="Vorheriges Cover"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+
+              <div className="franchise-coverflow-dots" role="tablist" aria-label={`${world.title} Coverflow Position`}>
+                {world.catalog.map((entry, i) => (
+                  <button
+                    key={`${world.slug}-dot-${entry.title}`}
+                    type="button"
+                    className="franchise-coverflow-dot"
+                    onClick={() => goToCase(i)}
+                    aria-label={`${entry.title} zentrieren`}
+                    aria-current={i === activeCase ? "true" : undefined}
+                    style={{ background: i === activeCase ? world.accent : "rgba(226,232,240,0.32)", boxShadow: i === activeCase ? `0 0 10px ${world.accent}bb` : "none" }}
+                  />
+                ))}
+              </div>
+
+              <button
+                type="button"
+                className="franchise-coverflow-nav"
+                onClick={() => goToCase(activeCase + 1)}
+                aria-label="Nächstes Cover"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </motion.div>
         </motion.div>
       </div>

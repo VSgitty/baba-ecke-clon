@@ -1342,41 +1342,38 @@ h3,
 
 .franchise-case-core {
   position: relative;
-  min-height: 350px;
+  min-height: 430px;
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background:
-    linear-gradient(155deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01) 34%),
-    linear-gradient(180deg, rgba(10, 14, 28, 0.92), rgba(4, 8, 18, 0.98));
-  box-shadow:
-    0 34px 80px -36px rgba(0, 0, 0, 0.9),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07);
-  padding: 24px;
-  overflow: hidden;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 8px 0 0;
+  overflow: visible;
   will-change: transform;
 }
 
 .franchise-case-glow {
   position: absolute;
-  inset: -16%;
-  filter: blur(26px);
-  opacity: 0.72;
+  inset: auto -18% -8% -18%;
+  height: 82%;
+  filter: blur(28px);
+  opacity: 0.9;
   pointer-events: none;
   z-index: 0;
 }
 
-.franchise-item-case {
+.franchise-coverflow-card {
   position: absolute;
-  left: 20px;
-  right: 24px;
-  top: 18px;
-  min-height: 84px;
-  display: flex;
-  align-items: stretch;
+  top: 132px;
+  left: 50%;
+  width: min(250px, 72%);
+  height: 320px;
+  transform: translateX(-50%);
+  transform-style: preserve-3d;
   border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 10px;
+  border-radius: 14px;
   background:
-    linear-gradient(130deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01) 44%),
+    linear-gradient(130deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.01) 44%),
     linear-gradient(180deg, rgba(16, 22, 40, 0.95), rgba(8, 12, 24, 0.98));
   box-shadow:
     0 22px 34px -22px rgba(0, 0, 0, 0.84),
@@ -1385,33 +1382,63 @@ h3,
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
   z-index: 1;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
 }
 
-.franchise-item-thumbnail {
+.franchise-coverflow-poster {
   position: relative;
-  width: 84px;
-  flex-shrink: 0;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
 }
 
-.franchise-item-thumbnail-overlay {
+.franchise-coverflow-poster-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(6, 9, 18, 0.04), rgba(6, 9, 18, 0.58));
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.06), rgba(4, 8, 18, 0.72) 72%, rgba(4, 8, 18, 0.96)),
+    linear-gradient(110deg, rgba(255,255,255,0.2), transparent 26%);
 }
 
-.franchise-item-spine {
-  width: 14px;
-  border-right: 1px solid rgba(255, 255, 255, 0.16);
-  opacity: 0.9;
-  flex-shrink: 0;
+.franchise-coverflow-fallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: end start;
+  padding: 0.8rem;
+  background: linear-gradient(160deg, rgba(18, 28, 52, 0.9), rgba(6, 12, 24, 1));
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.9);
 }
 
-.franchise-item-meta {
-  padding: 0.7rem 0.78rem;
+.franchise-coverflow-meta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.75rem 0.86rem;
   display: grid;
   gap: 0.22rem;
   min-width: 0;
+  background: linear-gradient(180deg, rgba(3, 6, 14, 0), rgba(3, 6, 14, 0.78) 28%, rgba(3, 6, 14, 0.96));
+}
+
+.franchise-coverflow-floor {
+  position: absolute;
+  left: 50%;
+  bottom: -32px;
+  width: 78%;
+  height: 42px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, rgba(255, 255, 255, 0.22), rgba(56, 189, 248, 0.14) 40%, transparent 74%),
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55), transparent 80%);
+  filter: blur(10px);
 }
 
 .franchise-item-type {
@@ -1450,8 +1477,45 @@ h3,
   transition: opacity 0.26s ease;
 }
 
-.franchise-item-case:hover .franchise-item-holo {
+.franchise-coverflow-card:hover .franchise-item-holo {
   opacity: 0.9;
+}
+
+.franchise-coverflow-controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.62rem;
+  z-index: 140;
+}
+
+.franchise-coverflow-nav {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  display: grid;
+  place-items: center;
+  color: rgba(226, 232, 240, 0.92);
+  background: rgba(4, 8, 16, 0.72);
+}
+
+.franchise-coverflow-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.2rem;
+}
+
+.franchise-coverflow-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  border: none;
 }
 
 .franchise-transition-ribbon {
@@ -1470,13 +1534,14 @@ h3,
   }
 
   .franchise-case-core {
-    min-height: 300px;
-    padding: 18px;
+    min-height: 380px;
+    padding: 8px 0 0;
   }
 
-  .franchise-item-case {
-    left: 12px;
-    right: 14px;
+  .franchise-coverflow-card {
+    width: min(220px, 76%);
+    height: 286px;
+    top: 108px;
   }
 }
 
