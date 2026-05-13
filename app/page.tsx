@@ -9,7 +9,7 @@ import { TestimonialsSection } from "@/components/testimonials-section";
 import { FaqSection } from "@/components/faq-section";
 import { CtaBanner } from "@/components/cta-banner";
 
-export default function HomePage() {
+export default async function HomePage() {
   const catalog = await getEnrichedCatalogItems(140);
 
   const schema = {
@@ -31,8 +31,8 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
 
-      <HeroSection />
-  <CineTicker />
+        <HeroSection />
+        <CineTicker />
       <FeatureGrid />
       <CineDashboard catalog={catalog} />
       <TestimonialsSection />

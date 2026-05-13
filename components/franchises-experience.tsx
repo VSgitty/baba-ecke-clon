@@ -416,7 +416,7 @@ export function FranchisesExperience({ assetsMap }: { assetsMap: Record<string, 
           >
             <button
               className="franchise-start-btn"
-              onClick={() => navigateTo(worlds[0].slug)}
+              onClick={() => navigateTo(franchiseWorlds[0].slug)}
             >
               <span>Erste Welt betreten</span>
               <motion.span
