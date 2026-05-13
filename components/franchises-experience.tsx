@@ -478,7 +478,13 @@ function FranchiseMiniMap({
   );
 }
 
-export function FranchisesExperience({ assetsMap }: { assetsMap: Record<string, FranchiseSectionAssets> }) {
+export function FranchisesExperience({
+  assetsMap,
+  worlds = franchiseWorlds,
+}: {
+  assetsMap: Record<string, FranchiseSectionAssets>;
+  worlds?: FranchiseWorldDef[];
+}) {
   const [activeSlug, setActiveSlug] = useState<string | null>("intro");
   const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
   const introRef = useRef<HTMLElement | null>(null);
@@ -497,11 +503,14 @@ export function FranchisesExperience({ assetsMap }: { assetsMap: Record<string, 
     sectionRefs.current.get(slug)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
-  const scrollToNextWorld = useCallback((currentSlug: string) => {
-    const idx = franchiseWorlds.findIndex((w) => w.slug === currentSlug);
-    const next = franchiseWorlds[idx + 1];
-    if (next) navigateTo(next.slug);
-  }, [navigateTo]);
+  const scrollToNextWorld = useCallback(
+    (currentSlug: string) => {
+      const idx = worlds.findIndex((w) => w.slug === currentSlug);
+      const next = worlds[idx + 1];
+      if (next) navigateTo(next.slug);
+    },
+    [worlds, navigateTo]
+  );
 
   // IntersectionObserver — set up once after all children mounted
   useEffect(() => {
@@ -528,7 +537,7 @@ export function FranchisesExperience({ assetsMap }: { assetsMap: Record<string, 
 
   // Keyboard navigation (↑ / ↓)
   useEffect(() => {
-    const slugList = ["intro", ...franchiseWorlds.map((w) => w.slug)];
+    const slugList = ["intro", ...worlds.map((w) => w.slug)];
 
     function handleKey(e: KeyboardEvent) {
       if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
@@ -545,14 +554,14 @@ export function FranchisesExperience({ assetsMap }: { assetsMap: Record<string, 
 
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [activeSlug, navigateTo]);
+  }, [activeSlug, navigateTo, worlds]);
 
   const miniMapItems: MiniMapItem[] = useMemo(
     () => [
       { slug: "intro", title: "Intro", accent: "#f5b034" },
-      ...franchiseWorlds.map((w) => ({ slug: w.slug, title: w.title, accent: w.accent })),
+      ...worlds.map((w) => ({ slug: w.slug, title: w.title, accent: w.accent })),
     ],
-    []
+    [worlds]
   );
 
   return (
@@ -603,7 +612,7 @@ export function FranchisesExperience({ assetsMap }: { assetsMap: Record<string, 
       </header>
 
       <div className="space-y-0">
-        {franchiseWorlds.map((world, index) => (
+        {worlds.map((world, index) => (
           <FranchiseSection
             key={world.slug}
             world={world}

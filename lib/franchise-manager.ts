@@ -1,10 +1,10 @@
 /**
  * Franchise Manager: Create, store, and retrieve custom franchise definitions.
- * Handles TMDB integration for auto-populating covers and metadata.
+ * Handles form validation and data conversion.
+ * TMDB search is handled by Server Actions in lib/tmdb-actions.ts
  */
 
 import { FranchiseWorldDef } from "@/data/franchise-worlds";
-import { tmdbFetch } from "./tmdb";
 
 const FRANCHISES_DATA_FILE = "franchises-custom.json";
 
@@ -100,73 +100,13 @@ export function formToDef(input: FranchiseFormInput): FranchiseWorldDef {
 
 /**
  * Search TMDB for movie/TV titles with cover info
+ * MOVED to lib/tmdb-actions.ts as a Server Action
  */
-export async function searchTmdbTitle(
-  query: string,
-  type: "movie" | "tv" = "movie"
-): Promise<Array<{ tmdbId: number; title: string; year?: number; posterPath?: string }>> {
-  try {
-    const endpoint =
-      type === "movie"
-        ? `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(query)}`
-        : `https://api.themoviedb.org/3/search/tv?query=${encodeURIComponent(query)}`;
-
-    const response = await tmdbFetch(endpoint);
-    const data = (await response.json()) as any;
-
-    return (data.results || [])
-      .slice(0, 10)
-      .map((item: any) => ({
-        tmdbId: item.id,
-        title: item.title || item.name,
-        year: item.release_date ? new Date(item.release_date).getFullYear() : undefined,
-        posterPath: item.poster_path,
-      }));
-  } catch (error) {
-    console.error("[searchTmdbTitle] Error:", error);
-    return [];
-  }
-}
 
 /**
  * Search TMDB for collections
+ * MOVED to lib/tmdb-actions.ts as a Server Action
  */
-export async function searchTmdbCollection(
-  query: string
-): Promise<Array<{ collectionId: number; name: string; posterPath?: string }>> {
-  try {
-    const endpoint = `https://api.themoviedb.org/3/search/collection?query=${encodeURIComponent(query)}`;
-    const response = await tmdbFetch(endpoint);
-    const data = (await response.json()) as any;
-
-    return (data.results || [])
-      .slice(0, 10)
-      .map((item: any) => ({
-        collectionId: item.id,
-        name: item.name,
-        posterPath: item.poster_path,
-      }));
-  } catch (error) {
-    console.error("[searchTmdbCollection] Error:", error);
-    return [];
-  }
-}
-
-/**
- * Server: Save franchise to public JSON file (for runtime loading)
- * This is called from an API route.
- */
-export async function saveFranchise(franchise: FranchiseWorldDef): Promise<void> {
-  try {
-    // In production, save to a persistent store (database, S3, etc.)
-    // For now, we'll save to public/data/franchises-custom.json
-    // Note: The API route handles the actual file write
-    // This utility just organizes the data structure
-  } catch (error) {
-    console.error("[saveFranchise] Error:", error);
-    throw error;
-  }
-}
 
 /**
  * Client: Validate form input before submission

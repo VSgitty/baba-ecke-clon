@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { readFile } from "fs/promises";
+import path from "path";
 
-import { franchiseWorlds } from "@/data/franchise-worlds";
+import { franchiseWorlds, type FranchiseWorldDef } from "@/data/franchise-worlds";
 import {
   resolveMovieAssets,
   resolveCollectionAssets,
@@ -21,7 +23,17 @@ export const metadata: Metadata = {
   alternates: { canonical: "/franchises" }
 };
 
-async function fetchWorldAssets(tmdb: (typeof franchiseWorlds)[0]["tmdb"]): Promise<TmdbAssets> {
+async function loadCustomFranchises(): Promise<FranchiseWorldDef[]> {
+  try {
+    const filePath = path.join(process.cwd(), "public", "data", "franchises-custom.json");
+    const data = await readFile(filePath, "utf-8");
+    return JSON.parse(data);
+  } catch {
+    return [];
+  }
+}
+
+async function fetchWorldAssets(tmdb: FranchiseWorldDef["tmdb"]): Promise<TmdbAssets> {
   switch (tmdb.strategy) {
     case "collection":
       return resolveCollectionAssets(tmdb.collectionId, tmdb.fallbackTitle);
@@ -36,7 +48,7 @@ async function fetchWorldAssets(tmdb: (typeof franchiseWorlds)[0]["tmdb"]): Prom
   }
 }
 
-async function fetchCatalogEntryAssets(entry: (typeof franchiseWorlds)[0]["catalog"][number]): Promise<TmdbAssets> {
+async function fetchCatalogEntryAssets(entry: FranchiseWorldDef["catalog"][number]): Promise<TmdbAssets> {
   const title = entry.searchTitle ?? entry.title;
   if (entry.type === "Serie") {
     return resolveTvAssets(title, entry.year);
@@ -44,7 +56,7 @@ async function fetchCatalogEntryAssets(entry: (typeof franchiseWorlds)[0]["catal
   return resolveMovieAssets(title, entry.year);
 }
 
-async function fetchHeroSourceAssets(world: (typeof franchiseWorlds)[0]): Promise<TmdbAssets> {
+async function fetchHeroSourceAssets(world: FranchiseWorldDef): Promise<TmdbAssets> {
   const source = world.heroSource;
   if (source.type === "tv") {
     return resolveTvAssets(source.title, source.year, source.tmdbId);
@@ -53,8 +65,12 @@ async function fetchHeroSourceAssets(world: (typeof franchiseWorlds)[0]): Promis
 }
 
 export default async function FranchisesPage() {
+  // Load both static and custom franchises
+  const customFranchises = await loadCustomFranchises();
+  const allWorlds = [...franchiseWorlds, ...customFranchises];
+
   const worldSettled = await Promise.allSettled(
-    franchiseWorlds.map(async (world) => {
+    allWorlds.map(async (world) => {
       const [heroBase, catalogSettled] = await Promise.all([
         fetchHeroSourceAssets(world),
         Promise.allSettled(world.catalog.map((entry) => fetchCatalogEntryAssets(entry))),
@@ -79,7 +95,7 @@ export default async function FranchisesPage() {
 
   const assetsMap: Record<string, FranchiseSectionAssets> = {};
   worldSettled.forEach((result, index) => {
-    const slug = franchiseWorlds[index]?.slug;
+    const slug = allWorlds[index]?.slug;
     if (!slug) return;
 
     assetsMap[slug] =
@@ -87,9 +103,21 @@ export default async function FranchisesPage() {
         ? result.value.assets
         : {
             hero: { posterUrl: null, backdropUrl: null, logoUrl: null },
-            catalog: franchiseWorlds[index].catalog.map(() => ({ posterUrl: null, backdropUrl: null, logoUrl: null }))
+            catalog: allWorlds[index].catalog.map(() => ({ posterUrl: null, backdropUrl: null, logoUrl: null }))
           };
   });
 
-  return <FranchisesExperience assetsMap={assetsMap} />;
+  return (
+    <>
+      <div className="fixed top-4 right-4 z-50">
+        <a
+          href="/admin/franchises"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm flex items-center gap-2"
+        >
+          <span>➕ Franchise hinzufügen</span>
+        </a>
+      </div>
+      <FranchisesExperience assetsMap={assetsMap} worlds={allWorlds} />
+    </>
+  );
 }
