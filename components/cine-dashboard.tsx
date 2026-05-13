@@ -393,18 +393,6 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                       <div className="cover-spine" aria-hidden />
                       <div className="cover-shine" aria-hidden />
 
-                      <div className={`franchise-layer ${overlay.glowClass}`} aria-hidden>
-                        <div className="franchise-aura" />
-                        <img
-                          src={overlay.asset}
-                          alt=""
-                          loading="lazy"
-                          decoding="async"
-                          className="franchise-emblem"
-                        />
-                        <span className="franchise-tag">{overlay.label}</span>
-                      </div>
-
                       {/* Subtle bottom vignette */}
                       <div
                         className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
@@ -426,6 +414,19 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                         </div>
                       ) : null}
                     </div>
+
+                    <div className={`franchise-layer ${overlay.glowClass}`} aria-hidden>
+                      <div className="franchise-aura" />
+                      <img
+                        src={overlay.asset}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="franchise-emblem"
+                      />
+                      <span className="franchise-tag">{overlay.label}</span>
+                    </div>
+
                     <div className="cover-reflection" aria-hidden />
                   </article>
                 );
