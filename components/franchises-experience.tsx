@@ -184,7 +184,7 @@ function FranchiseSection({
 
       {/* ── TOP: Title / Logo ─────────────────────────────── */}
       <motion.div
-        className="relative z-10 mx-auto w-full max-w-[1560px]"
+        className="relative z-10 mx-auto w-full max-w-7xl"
         style={{ y: titleY }}
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -215,7 +215,7 @@ function FranchiseSection({
 
       {/* ── BOTTOM: Meta + Carousel ───────────────────────── */}
       <div className="relative z-10 mt-auto">
-      <div className="mx-auto grid w-full max-w-[1560px] gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
+      <div className="mx-auto grid w-full max-w-7xl gap-6 lg:grid-cols-[1.08fr_0.92fr] lg:items-end">
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}>
           <p className="mb-4 max-w-[60ch] text-base text-zinc-200/80 sm:text-lg">{world.subline} · {world.motionLabel}</p>
 

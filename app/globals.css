@@ -1564,7 +1564,7 @@ h3,
    ================================================================ */
 .franchise-minimap {
   position: fixed;
-  right: 22px;
+  right: clamp(84px, 7vw, 132px);
   top: 50%;
   transform: translateY(-50%);
   z-index: 120;
