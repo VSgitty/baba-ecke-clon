@@ -41,7 +41,7 @@ export function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden pb-0 pt-0"
+      className="relative -mt-16 overflow-hidden pb-0 pt-16"
       onMouseMove={handlePointerMove}
       onMouseLeave={resetPointer}
     >

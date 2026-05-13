@@ -199,7 +199,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
     return shelves
       .map((shelf) => ({
         ...shelf,
-        items: shelf.items.slice(0, 10)
+        items: shelf.items
       }))
       .filter((shelf) => shelf.items.length > 0);
   }, [filteredCatalog]);
@@ -251,12 +251,12 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
     if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
     const rect = event.currentTarget.getBoundingClientRect();
     const infoW = 272;
-    const infoH = 392;
+    const infoH = 404;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const showLeft = vw - rect.right < infoW + 24;
     const horizontalOffset = 24;
-    const verticalLift = Math.min(140, Math.max(78, rect.height * 0.46));
+    const verticalLift = Math.min(220, Math.max(120, rect.height * 0.62));
     const rawLeft = showLeft ? rect.left - infoW - horizontalOffset : rect.right - 64;
     const left = Math.max(8, Math.min(rawLeft, vw - infoW - 8));
     const top  = Math.max(8, Math.min(rect.top - verticalLift, vh - infoH - 8));
@@ -690,10 +690,10 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
             key={hoveredItem.id}
             className="info-card-float fixed z-[200] w-[272px]"
             style={{ left: infoPos.left, top: infoPos.top }}
-            initial={{ opacity: 0, x: infoPos.showLeft ? 10 : -10, scale: 0.94 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: infoPos.showLeft ? 10 : -10, scale: 0.94 }}
-            transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+            initial={{ opacity: 0, x: infoPos.showLeft ? 16 : -16, y: 14, scale: 0.92 }}
+            animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+            exit={{ opacity: 0, x: infoPos.showLeft ? 14 : -14, y: 10, scale: 0.94 }}
+            transition={{ type: "spring", stiffness: 320, damping: 30, mass: 0.55 }}
             onMouseEnter={cancelLeave}
             onMouseLeave={handleCardLeave}
           >

@@ -13,7 +13,7 @@ export function SiteHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="site-navbar sticky top-0 z-50 border-b">
+    <header className="site-navbar fixed inset-x-0 top-0 z-50 border-b">
       <div className="site-navbar-inner mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="group flex items-center gap-3">
