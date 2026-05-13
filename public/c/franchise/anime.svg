@@ -1,0 +1,19 @@
+<svg width="420" height="170" viewBox="0 0 420 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="420" y2="170" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00E5FF"/>
+      <stop offset="1" stop-color="#9A6BFF"/>
+    </linearGradient>
+    <filter id="f1" x="-20%" y="-40%" width="140%" height="180%">
+      <feGaussianBlur stdDeviation="3.2"/>
+    </filter>
+  </defs>
+  <g opacity="0.85">
+    <path d="M24 130L84 30L136 86L186 22L246 84L302 18L396 18" stroke="url(#g1)" stroke-width="10" stroke-linecap="round"/>
+    <path d="M24 130L396 130" stroke="url(#g1)" stroke-width="4" opacity="0.7"/>
+  </g>
+  <rect x="14" y="14" width="392" height="142" rx="20" stroke="url(#g1)" stroke-opacity="0.45"/>
+  <text x="30" y="108" fill="#E9F8FF" font-size="42" font-family="Arial, sans-serif" font-weight="800" letter-spacing="2">ANIME SIGNAL</text>
+  <text x="30" y="138" fill="#7BEAFF" font-size="16" font-family="Arial, sans-serif" letter-spacing="4">LIMITED ARCHIVE</text>
+  <path d="M260 44H386" stroke="#A080FF" stroke-width="5" filter="url(#f1)"/>
+</svg>

@@ -1,0 +1,13 @@
+<svg width="420" height="170" viewBox="0 0 420 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="a1" x1="8" y1="20" x2="410" y2="150" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFCA62"/>
+      <stop offset="1" stop-color="#FF6D4A"/>
+    </linearGradient>
+  </defs>
+  <rect x="10" y="12" width="400" height="146" rx="12" stroke="url(#a1)" stroke-opacity="0.55"/>
+  <path d="M26 126L120 34L186 104L262 30L394 30" stroke="url(#a1)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M28 142H392" stroke="url(#a1)" stroke-width="3" opacity="0.7"/>
+  <text x="30" y="102" fill="#FFF0D2" font-size="40" font-family="Arial, sans-serif" font-weight="800" letter-spacing="2">RUSH FRAME</text>
+  <text x="30" y="136" fill="#FFB179" font-size="15" font-family="Arial, sans-serif" letter-spacing="4">MAX IMPACT</text>
+</svg>

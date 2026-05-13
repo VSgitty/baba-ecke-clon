@@ -1,0 +1,14 @@
+<svg width="420" height="170" viewBox="0 0 420 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="s1" x1="0" y1="20" x2="420" y2="150" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5AF2FF"/>
+      <stop offset="1" stop-color="#45A4FF"/>
+    </linearGradient>
+  </defs>
+  <rect x="12" y="14" width="396" height="142" rx="16" stroke="url(#s1)" stroke-opacity="0.6"/>
+  <path d="M22 82H398" stroke="url(#s1)" stroke-width="2" opacity="0.45"/>
+  <path d="M32 56H168M252 56H388M32 108H128M202 108H388" stroke="url(#s1)" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+  <circle cx="362" cy="52" r="10" stroke="#6BE7FF" stroke-width="3"/>
+  <text x="30" y="104" fill="#E9FBFF" font-size="40" font-family="Arial, sans-serif" font-weight="800" letter-spacing="2">VOID CODE</text>
+  <text x="30" y="136" fill="#80E8FF" font-size="15" font-family="Arial, sans-serif" letter-spacing="4">HOLO LAYER</text>
+</svg>
