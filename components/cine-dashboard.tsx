@@ -155,7 +155,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
 
   return (
     <div className="space-y-8">
-      <section className="mx-auto grid w-full max-w-7xl gap-4 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
+      <section className="site-shell grid w-full gap-4 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
         <Card className="cine-panel">
           <CardHeader className="pb-2">
             <CardDescription>Gesamtkatalog</CardDescription>
@@ -182,7 +182,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
         </Card>
       </section>
 
-      <section className="mx-auto grid w-full max-w-7xl gap-4 px-4 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
+      <section className="site-shell grid w-full gap-4 px-4 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
         <Card className="cine-panel">
           <CardHeader>
             <CardTitle>Weiter schauen</CardTitle>
@@ -236,7 +236,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
         </Card>
       </section>
 
-      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="site-shell w-full px-4 sm:px-6 lg:px-8">
         <Card className="cine-panel">
           <CardHeader>
             <CardTitle>Franchise Tracker</CardTitle>
@@ -277,7 +277,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
         </Card>
       </section>
 
-      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="site-shell w-full px-4 sm:px-6 lg:px-8">
         <Card className="cine-panel">
           <CardHeader>
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -348,7 +348,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                     onMouseMove={handleCoverMove}
                     onMouseLeave={resetCoverMove}
                   >
-                    <div className="relative aspect-[2/3] w-full overflow-hidden bg-zinc-900">
+                    <div className="cover-tilt relative aspect-[2/3] w-full overflow-hidden bg-zinc-900">
                       {item.poster ? (
                         <img
                           src={item.poster}
@@ -364,6 +364,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                       <div className="cover-shine" aria-hidden />
                       <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent,rgba(5,8,18,0.82))]" />
                     </div>
+                    <div className="cover-reflection" aria-hidden />
                     <div className="p-3">
                     <div className="mb-1.5 flex items-center justify-between gap-2">
                       <h3 className="line-clamp-1 text-[1.05rem] font-semibold leading-tight text-[#e7ba3f]">{item.title}</h3>
@@ -378,22 +379,24 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                     <p className="text-[11px] text-zinc-400">
                       {item.type} | {item.genre} {item.year ? `| ${item.year}` : ""}
                     </p>
-                    <p className="mt-1.5 line-clamp-2 text-xs leading-snug text-zinc-300">
-                      {item.description || "Kein Beschreibungstext hinterlegt."}
-                    </p>
+                    <div className="cover-extra">
+                      <p className="mt-1.5 line-clamp-2 text-xs leading-snug text-zinc-300">
+                        {item.description || "Kein Beschreibungstext hinterlegt."}
+                      </p>
 
-                    <div className="mt-2.5 flex flex-wrap gap-1.5">
-                      <Button size="sm" variant={inWatchlist ? "secondary" : "ghost"} className="h-8 px-2.5 text-xs" onClick={() => toggleWatchlist(item)}>
-                        {inWatchlist ? "Gemerkt" : "Zur Watchlist"}
-                      </Button>
-                      {item.streamUrl ? (
-                        <Button size="sm" variant="outline" className="h-8 px-2.5 text-xs" asChild>
-                          <a href={item.streamUrl} target="_blank" rel="noreferrer">
-                            Stream
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </a>
+                      <div className="mt-2.5 flex flex-wrap gap-1.5">
+                        <Button size="sm" variant={inWatchlist ? "secondary" : "ghost"} className="h-8 px-2.5 text-xs" onClick={() => toggleWatchlist(item)}>
+                          {inWatchlist ? "Gemerkt" : "Zur Watchlist"}
                         </Button>
-                      ) : null}
+                        {item.streamUrl ? (
+                          <Button size="sm" variant="outline" className="h-8 px-2.5 text-xs" asChild>
+                            <a href={item.streamUrl} target="_blank" rel="noreferrer">
+                              Stream
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          </Button>
+                        ) : null}
+                      </div>
                     </div>
                     </div>
                   </article>
@@ -404,7 +407,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
         </Card>
       </section>
 
-      <section className="mx-auto grid w-full max-w-7xl gap-3 px-4 pb-4 sm:grid-cols-3 sm:px-6 lg:px-8">
+      <section className="site-shell grid w-full gap-3 px-4 pb-4 sm:grid-cols-3 sm:px-6 lg:px-8">
         <Card className="cine-panel sm:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">

@@ -141,6 +141,11 @@ h3,
   animation: float-in 0.7s ease-out both;
 }
 
+.site-shell {
+  width: min(1520px, 96vw);
+  margin-inline: auto;
+}
+
 .cine-panel {
   border: 1px solid color-mix(in srgb, var(--brand) 18%, transparent);
   background: linear-gradient(160deg, rgba(19, 24, 44, 0.7), rgba(10, 12, 24, 0.82));
@@ -179,9 +184,7 @@ h3,
 
 .cover-card {
   position: relative;
-  transform-style: preserve-3d;
-  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
-  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+  transition: border-color 220ms ease, box-shadow 220ms ease;
   box-shadow: 0 18px 36px -24px rgba(0, 0, 0, 0.7);
   background: linear-gradient(180deg, rgba(11, 14, 24, 0.96), rgba(5, 8, 17, 0.98));
 }
@@ -194,12 +197,23 @@ h3,
 }
 
 .cover-media {
-  transform: translateZ(14px);
   transition: transform 260ms ease, filter 260ms ease;
 }
 
-.cover-card:hover .cover-media {
-  transform: translateZ(24px) scale(1.04);
+.cover-tilt {
+  transform-style: preserve-3d;
+  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: transform 220ms ease;
+}
+
+.cover-card:hover .cover-tilt,
+.cover-card:focus-within .cover-tilt {
+  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) scale(1.01);
+}
+
+.cover-card:hover .cover-media,
+.cover-card:focus-within .cover-media {
+  transform: scale(1.05);
   filter: saturate(1.14) contrast(1.08);
 }
 
@@ -218,6 +232,46 @@ h3,
 .cover-card:hover .cover-shine {
   transform: rotate(16deg) translateX(430%);
   opacity: 1;
+}
+
+.cover-extra {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(10px);
+  transition: max-height 320ms ease, opacity 220ms ease, transform 260ms ease;
+}
+
+.cover-card:hover .cover-extra,
+.cover-card:focus-within .cover-extra {
+  max-height: 160px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (hover: none) {
+  .cover-extra {
+    max-height: 160px;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cover-reflection {
+  position: absolute;
+  inset: auto 8% -24px;
+  height: 24px;
+  border-radius: 999px;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.28), transparent 68%);
+  filter: blur(8px);
+  opacity: 0;
+  transition: opacity 220ms ease;
+  pointer-events: none;
+}
+
+.cover-card:hover .cover-reflection,
+.cover-card:focus-within .cover-reflection {
+  opacity: 0.6;
 }
 
 .cover-spine {

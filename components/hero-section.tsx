@@ -15,8 +15,8 @@ export function HeroSection() {
     offset: ["start start", "end start"]
   });
 
-  const parallaxYBack = useTransform(scrollYProgress, [0, 1], ["0%", "18%"]);
-  const parallaxYFront = useTransform(scrollYProgress, [0, 1], ["0%", "9%"]);
+  const parallaxYBack = useTransform(scrollYProgress, [0, 1], ["0%", "24%"]);
+  const parallaxYFront = useTransform(scrollYProgress, [0, 1], ["0%", "14%"]);
   const fogOpacity = useTransform(scrollYProgress, [0, 1], [0.55, 0.88]);
 
   const driftX = useMotionTemplate`calc(${pointerX}px * 1.2)`;
@@ -47,7 +47,7 @@ export function HeroSection() {
         style={{ y: parallaxYBack, x: driftX }}
       >
         <Image
-          src="/c/header.jpg"
+          src="/c/lost-wallpaper.png"
           alt="LOST Wallpaper"
           fill
           priority
@@ -58,7 +58,7 @@ export function HeroSection() {
 
       <motion.div className="hero-parallax-front absolute inset-0 -z-10" style={{ y: parallaxYFront, x: driftY }}>
         <Image
-          src="/c/header.jpg"
+          src="/c/lost-wallpaper.png"
           alt="LOST Wallpaper Overlay"
           fill
           priority
