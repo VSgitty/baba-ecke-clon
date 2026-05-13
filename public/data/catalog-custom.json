@@ -1,0 +1,14 @@
+{
+  "avatar-the-way-of-water": {
+    "id": "avatar-the-way-of-water",
+    "title": "Avatar: The Way of Water",
+    "type": "movie",
+    "genre": "thriller",
+    "year": 2022,
+    "duration": "120 min",
+    "poster": "https://m.media-amazon.com/images/M/MV5BMDEyZjAxNzctYTVlOS00YTU2LWE3OTItOWU0NDBlYzAwYmU5XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
+    "rating": 7.5,
+    "description": "James Camerons Meisterwerk mit beeindruckenden visuellen Effekten und einer packenden Geschichte der Pandora-Welt.",
+    "streamUrl": ""
+  }
+}

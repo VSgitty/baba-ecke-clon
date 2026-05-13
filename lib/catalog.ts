@@ -1,4 +1,6 @@
 import rawCatalog from "@/data/movies-data.json";
+import { readFile } from "fs/promises";
+import path from "path";
 
 export type CatalogItem = {
   id: string;
@@ -61,19 +63,34 @@ export function getCatalogItems(limit = 120): CatalogItem[] {
   }));
 }
 
+async function loadCustomCatalogItems(): Promise<CatalogItem[]> {
+  try {
+    const filePath = path.join(process.cwd(), "public", "data", "catalog-custom.json");
+    const data = await readFile(filePath, "utf-8");
+    const customCatalog: Record<string, CatalogItem> = JSON.parse(data);
+    return Object.entries(customCatalog).map(([id, item]) => item);
+  } catch {
+    return [];
+  }
+}
+
 /**
- * Server-side: returns catalog items and prefers TMDB posters over local covers.
+ * Server-side: returns catalog items (static + custom) and prefers TMDB posters over local covers.
  * Import this only from Server Components — it calls the TMDB API.
  * Enrichment is batched (max `enrichLimit` items) and cached 24 h via Next.js fetch.
  */
 export async function getEnrichedCatalogItems(limit = 120, enrichLimit = limit): Promise<CatalogItem[]> {
-  const items = getCatalogItems(limit);
+  const staticItems = getCatalogItems(limit);
+  const customItems = await loadCustomCatalogItems();
+  
+  // Combine: static first, then custom (up to limit)
+  const allItems = [...staticItems, ...customItems].slice(0, limit);
 
   // Lazy import keeps server-only code tree-shaken from client bundles
   const { resolveItemPoster } = await import("@/lib/tmdb");
 
-  const itemsToEnrich = items.slice(0, Math.min(enrichLimit, items.length));
-  if (itemsToEnrich.length === 0) return items;
+  const itemsToEnrich = allItems.slice(0, Math.min(enrichLimit, allItems.length));
+  if (itemsToEnrich.length === 0) return allItems;
 
   const enriched = await Promise.allSettled(
     itemsToEnrich.map((item) => resolveItemPoster(item.title, item.type, item.year))
@@ -85,7 +102,7 @@ export async function getEnrichedCatalogItems(limit = 120, enrichLimit = limit):
     posterMap[item.id] = result?.status === "fulfilled" ? result.value : null;
   });
 
-  return items.map((item) => {
+  return allItems.map((item) => {
     const tmdbPoster = posterMap[item.id];
     return tmdbPoster ? { ...item, poster: tmdbPoster } : item;
   });

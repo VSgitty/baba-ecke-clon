@@ -31,8 +31,17 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
 
-        <HeroSection />
-        <CineTicker />
+      <div className="fixed top-4 right-4 z-50">
+        <a
+          href="/admin/catalog"
+          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-sm flex items-center gap-2"
+        >
+          <span>➕ Film hinzufügen</span>
+        </a>
+      </div>
+
+      <HeroSection />
+      <CineTicker />
       <FeatureGrid />
       <CineDashboard catalog={catalog} />
       <TestimonialsSection />
