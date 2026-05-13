@@ -12,6 +12,7 @@ export type Franchise = {
 
 export const navItems = [
   { href: "/", label: "Home" },
+  { href: "/franchises", label: "Franchises" },
   { href: "/my-list", label: "My List & Progress" },
   { href: "/streams", label: "Streams" }
 ] as const;
