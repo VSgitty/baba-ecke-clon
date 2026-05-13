@@ -338,13 +338,13 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
               ))}
             </div>
 
-            <div className="catalog-shelf flex gap-4 overflow-x-auto pb-4">
+            <div className="catalog-shelf grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
               {filteredCatalog.slice(0, 60).map((item) => {
                 const inWatchlist = Boolean(watchlist[item.id]);
                 return (
                   <article
                     key={item.id}
-                    className="cover-card w-[172px] shrink-0 overflow-hidden rounded-xl border border-white/15 bg-white/[0.04] p-0"
+                    className="cover-card overflow-hidden rounded-xl border border-white/15 bg-white/[0.04] p-0"
                     onMouseMove={handleCoverMove}
                     onMouseLeave={resetCoverMove}
                   >

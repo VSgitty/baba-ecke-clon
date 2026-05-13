@@ -175,13 +175,6 @@ h3,
 
 .catalog-shelf {
   perspective: 1200px;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
-}
-
-.catalog-shelf > * {
-  scroll-snap-align: start;
 }
 
 .cover-card {
