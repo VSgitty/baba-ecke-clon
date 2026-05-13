@@ -279,15 +279,21 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
     const rect = event.currentTarget.getBoundingClientRect();
     const px = (event.clientX - rect.left) / rect.width;
     const py = (event.clientY - rect.top) / rect.height;
-    const tiltX = ((0.5 - py) * 10).toFixed(2);
-    const tiltY = ((px - 0.5) * 12).toFixed(2);
+    const tiltX = ((0.5 - py) * 14).toFixed(2);
+    const tiltY = ((px - 0.5) * 16).toFixed(2);
+    const mx = (px * 100).toFixed(2);
+    const my = (py * 100).toFixed(2);
     event.currentTarget.style.setProperty("--tilt-x", `${tiltX}deg`);
     event.currentTarget.style.setProperty("--tilt-y", `${tiltY}deg`);
+    event.currentTarget.style.setProperty("--mx", `${mx}%`);
+    event.currentTarget.style.setProperty("--my", `${my}%`);
   }
 
   function resetCoverMove(event: React.MouseEvent<HTMLElement>) {
     event.currentTarget.style.setProperty("--tilt-x", "0deg");
     event.currentTarget.style.setProperty("--tilt-y", "0deg");
+    event.currentTarget.style.setProperty("--mx", "50%");
+    event.currentTarget.style.setProperty("--my", "50%");
   }
 
   return (
