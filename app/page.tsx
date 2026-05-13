@@ -35,6 +35,7 @@ export default async function HomePage() {
         <CineTicker />
       <FeatureGrid />
       <CineDashboard catalog={catalog} />
+      <div id="catalog-end" />
       <TestimonialsSection />
       <FaqSection />
       <CtaBanner />

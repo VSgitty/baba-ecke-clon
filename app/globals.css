@@ -658,6 +658,12 @@ h3,
   pointer-events: none;
   z-index: 8;
   isolation: isolate;
+  animation: cinematic-reels-fadein 0.7s ease both;
+}
+
+@keyframes cinematic-reels-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .cinematic-side-reels__glare {

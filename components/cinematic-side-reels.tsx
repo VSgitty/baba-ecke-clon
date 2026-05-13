@@ -15,6 +15,7 @@ export function CinematicSideReels() {
   const [activeAccent, setActiveAccent] = useState(DEFAULT_ACCENT);
   const [activeGlow, setActiveGlow] = useState("rgba(245, 176, 52, 0.14)");
   const [visible, setVisible] = useState(false);
+  const [pastCatalog, setPastCatalog] = useState(false);
   const [gutterWidth, setGutterWidth] = useState(0);
 
   const scrollY = useMotionValue(0);
@@ -74,6 +75,18 @@ export function CinematicSideReels() {
     frame = window.requestAnimationFrame(tick);
     window.addEventListener("resize", recalcGutter);
 
+    // Show reels immediately if no catalog sentinel exists (e.g. /franchises page)
+    const sentinel = document.getElementById("catalog-end");
+    if (!sentinel) {
+      setPastCatalog(true);
+    } else {
+      const sentinelObserver = new IntersectionObserver(
+        ([entry]) => { if (entry.isIntersecting) { setPastCatalog(true); sentinelObserver.disconnect(); } },
+        { rootMargin: "0px 0px -10% 0px", threshold: 0 }
+      );
+      sentinelObserver.observe(sentinel);
+    }
+
     return () => {
       window.removeEventListener("resize", recalcGutter);
       window.cancelAnimationFrame(frame);
@@ -106,7 +119,7 @@ export function CinematicSideReels() {
     return () => observer.disconnect();
   }, [accentMap]);
 
-  if (!visible) return null;
+  if (!visible || !pastCatalog) return null;
 
   return (
     <div className="cinematic-side-reels" aria-hidden="true">
