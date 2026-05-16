@@ -63,6 +63,8 @@ type TmdbMovie = {
   title: string;
   poster_path: string | null;
   backdrop_path: string | null;
+  overview?: string;
+  vote_average?: number;
   release_date?: string;
 };
 
@@ -71,7 +73,24 @@ type TmdbTv = {
   name: string;
   poster_path: string | null;
   backdrop_path: string | null;
+  overview?: string;
+  vote_average?: number;
   first_air_date?: string;
+};
+
+type TmdbGenre = {
+  id: number;
+  name: string;
+};
+
+type TmdbMovieDetail = TmdbMovie & {
+  runtime?: number;
+  genres?: TmdbGenre[];
+};
+
+type TmdbTvDetail = TmdbTv & {
+  number_of_episodes?: number;
+  genres?: TmdbGenre[];
 };
 
 type TmdbSearchMovieResult = { results: TmdbMovie[] };
@@ -270,4 +289,84 @@ export async function resolveItemPoster(
   }
   const movie = await searchMovie(title, year);
   return imgPoster(movie?.poster_path) ?? null;
+}
+
+export type TmdbCatalogAutofill = {
+  title: string;
+  type: "movie" | "series";
+  genre: string;
+  year?: number;
+  duration: string;
+  rating: string;
+  description: string;
+  poster: string;
+};
+
+function formatRating(voteAverage: number | undefined): string {
+  if (!voteAverage || !Number.isFinite(voteAverage)) return "7.0/10";
+  return `${voteAverage.toFixed(1)}/10`;
+}
+
+function toCatalogYear(dateValue: string | undefined): number | undefined {
+  if (!dateValue) return undefined;
+  const parsed = Number.parseInt(dateValue.slice(0, 4), 10);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+export async function resolveCatalogAutofill(
+  title: string,
+  type: "movie" | "series",
+  year?: number
+): Promise<TmdbCatalogAutofill | null> {
+  if (!title.trim()) return null;
+
+  try {
+    if (type === "series") {
+      const match = await searchTv(title, year);
+      if (!match) return null;
+
+      const detail = await tmdbFetch<TmdbTvDetail>(`/tv/${match.id}`);
+      const genre = detail?.genres?.[0]?.name || "Drama";
+      const episodes = detail?.number_of_episodes;
+      const duration = episodes && episodes > 0 ? `${episodes} Episodes` : "8 Episodes";
+      const resolvedYear = toCatalogYear(detail?.first_air_date ?? match.first_air_date);
+      const poster = imgPoster(detail?.poster_path ?? match.poster_path);
+      if (!poster) return null;
+
+      return {
+        title: detail?.name || match.name || title,
+        type,
+        genre,
+        year: resolvedYear,
+        duration,
+        rating: formatRating(detail?.vote_average ?? match.vote_average),
+        description: detail?.overview?.trim() || match.overview?.trim() || "",
+        poster
+      };
+    }
+
+    const match = await searchMovie(title, year);
+    if (!match) return null;
+
+    const detail = await tmdbFetch<TmdbMovieDetail>(`/movie/${match.id}`);
+    const genre = detail?.genres?.[0]?.name || "Action";
+    const runtime = detail?.runtime;
+    const duration = runtime && runtime > 0 ? `${runtime} min` : "120 min";
+    const resolvedYear = toCatalogYear(detail?.release_date ?? match.release_date);
+    const poster = imgPoster(detail?.poster_path ?? match.poster_path);
+    if (!poster) return null;
+
+    return {
+      title: detail?.title || match.title || title,
+      type,
+      genre,
+      year: resolvedYear,
+      duration,
+      rating: formatRating(detail?.vote_average ?? match.vote_average),
+      description: detail?.overview?.trim() || match.overview?.trim() || "",
+      poster
+    };
+  } catch {
+    return null;
+  }
 }

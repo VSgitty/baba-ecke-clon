@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Wand2 } from "lucide-react";
 import {
   validateCatalogInput,
   formToCatalogItem,
@@ -13,8 +13,10 @@ import {
 export default function AdminCatalogPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isAutofilling, setIsAutofilling] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [successMessage, setSuccessMessage] = useState("");
+  const [autofillMessage, setAutofillMessage] = useState("");
 
   const [form, setForm] = useState<CatalogFormInput>({
     title: "",
@@ -39,13 +41,91 @@ export default function AdminCatalogPage() {
       .replace(/[^a-z0-9-]/g, "");
   };
 
+  const autofillFromTmdb = useCallback(async (applyToForm = true) => {
+    const title = form.title.trim();
+    if (!title) return null;
+
+    setIsAutofilling(true);
+    setAutofillMessage("");
+
+    try {
+      const params = new URLSearchParams({
+        title,
+        type: form.type,
+        year: String(form.year || "")
+      });
+
+      const response = await fetch(`/api/catalog/autofill?${params.toString()}`, {
+        method: "GET"
+      });
+
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      const tmdbItem = data?.item;
+      if (!tmdbItem) return null;
+
+      if (applyToForm) {
+        setForm((prev) => ({
+          ...prev,
+          title: tmdbItem.title || prev.title,
+          type: tmdbItem.type || prev.type,
+          genre: tmdbItem.genre || prev.genre,
+          year: tmdbItem.year || prev.year,
+          duration: tmdbItem.duration || prev.duration,
+          rating: tmdbItem.rating || prev.rating,
+          cover: tmdbItem.poster || prev.cover,
+          description: tmdbItem.description || prev.description
+        }));
+        setAutofillMessage("TMDB-Daten automatisch uebernommen.");
+      }
+
+      return tmdbItem as {
+        title?: string;
+        type?: "movie" | "series";
+        genre?: string;
+        year?: number;
+        duration?: string;
+        rating?: string;
+        poster?: string;
+        description?: string;
+      };
+    } catch {
+      return null;
+    } finally {
+      setIsAutofilling(false);
+    }
+  }, [form.title, form.type, form.year]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors([]);
     setSuccessMessage("");
+    setAutofillMessage("");
+
+    // Try to enrich missing metadata before validation.
+    const tmdbItem = await autofillFromTmdb(false);
+    const effectiveForm: CatalogFormInput = tmdbItem
+      ? {
+          ...form,
+          title: tmdbItem.title || form.title,
+          type: tmdbItem.type || form.type,
+          genre: tmdbItem.genre || form.genre,
+          year: tmdbItem.year || form.year,
+          duration: tmdbItem.duration || form.duration,
+          rating: tmdbItem.rating || form.rating,
+          cover: tmdbItem.poster || form.cover,
+          description: tmdbItem.description || form.description
+        }
+      : form;
+
+    if (tmdbItem) {
+      setForm(effectiveForm);
+      setAutofillMessage("TMDB-Daten automatisch uebernommen.");
+    }
 
     // Validate
-    const validationErrors = validateCatalogInput(form);
+    const validationErrors = validateCatalogInput(effectiveForm);
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
       return;
@@ -53,8 +133,8 @@ export default function AdminCatalogPage() {
 
     setIsLoading(true);
     try {
-      const id = generateId(form.title);
-      const item = formToCatalogItem(id, form);
+      const id = generateId(effectiveForm.title);
+      const item = formToCatalogItem(id, effectiveForm);
 
       // Send to API
       const response = await fetch("/api/catalog", {
@@ -68,7 +148,7 @@ export default function AdminCatalogPage() {
         throw new Error(data.error || "Failed to save catalog item");
       }
 
-      setSuccessMessage(`✅ "${form.title}" erfolgreich zum Katalog hinzugefügt!`);
+      setSuccessMessage(`✅ "${effectiveForm.title}" erfolgreich zum Katalog hinzugefügt!`);
 
       // Reset form
       setForm({
@@ -100,6 +180,12 @@ export default function AdminCatalogPage() {
         <h1 className="text-4xl font-bold mb-2">🎬 Katalog Admin Panel</h1>
         <p className="text-slate-400 mb-8">Füge einen neuen Film oder eine Serie zum Cine-Katalog hinzu</p>
 
+        {autofillMessage && (
+          <div className="bg-blue-900/40 border border-blue-700 rounded p-4 mb-6">
+            <p className="text-blue-200">{autofillMessage}</p>
+          </div>
+        )}
+
         {errors.length > 0 && (
           <div className="bg-red-900/40 border border-red-700 rounded p-4 mb-6">
             <h3 className="font-bold text-red-300 mb-2">Fehler:</h3>
@@ -129,8 +215,31 @@ export default function AdminCatalogPage() {
                 placeholder="Titel (z.B. Avatar 2)"
                 value={form.title}
                 onChange={(e) => handleInputChange("title", e.target.value)}
+                onBlur={() => {
+                  if (form.title.trim().length >= 2) {
+                    void autofillFromTmdb();
+                  }
+                }}
                 className="bg-slate-800 border border-slate-700 rounded px-3 py-2 w-full"
               />
+              <button
+                type="button"
+                onClick={() => void autofillFromTmdb()}
+                disabled={isAutofilling || !form.title.trim()}
+                className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700 disabled:bg-violet-900/70 disabled:opacity-60 text-white font-semibold px-4 py-2 rounded flex items-center justify-center gap-2"
+              >
+                {isAutofilling ? (
+                  <>
+                    <Loader2 className="animate-spin w-4 h-4" />
+                    Lade TMDB...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-4 h-4" />
+                    Auto-Fill aus TMDB
+                  </>
+                )}
+              </button>
               <div className="grid grid-cols-2 gap-4">
                 <select
                   value={form.type}
