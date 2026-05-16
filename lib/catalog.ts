@@ -16,11 +16,13 @@ export type CatalogItem = {
 };
 
 type RawCatalogEntry = {
+  id?: string;
   title?: string;
   type?: string;
   genre?: string;
   year?: number | string;
   duration?: string;
+  poster?: string;
   cover?: string;
   rating?: number | string;
   description?: string;
@@ -46,32 +48,56 @@ function toYear(value: number | string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-export function getCatalogItems(limit = 120): CatalogItem[] {
-  const entries = Object.entries(rawCatalog as Record<string, RawCatalogEntry>);
-
-  return entries.slice(0, limit).map(([id, item]) => ({
+function toCatalogItem(id: string, item: RawCatalogEntry): CatalogItem {
+  return {
     id,
     title: item.title || "Untitled",
     type: item.type === "series" ? "series" : "movie",
     genre: toGenre(item.genre),
     year: toYear(item.year),
     duration: item.duration,
-    poster: item.cover,
+    poster: item.poster || item.cover,
     rating: toRating(item.rating),
     description: item.description,
     streamUrl: item.streamUrl
-  }));
+  };
+}
+
+export function getCatalogItems(limit = 120): CatalogItem[] {
+  const entries = Object.entries(rawCatalog as Record<string, RawCatalogEntry>);
+
+  return entries.slice(0, limit).map(([id, item]) => toCatalogItem(id, item));
 }
 
 async function loadCustomCatalogItems(): Promise<CatalogItem[]> {
   try {
     const filePath = path.join(process.cwd(), "public", "data", "catalog-custom.json");
     const data = await readFile(filePath, "utf-8");
-    const customCatalog: Record<string, CatalogItem> = JSON.parse(data);
-    return Object.entries(customCatalog).map(([id, item]) => item);
+    const customCatalog: Record<string, RawCatalogEntry> = JSON.parse(data);
+    return Object.entries(customCatalog).map(([id, item]) => toCatalogItem(item.id || id, item));
   } catch {
     return [];
   }
+}
+
+export async function getCombinedCatalogItems(limit = 120): Promise<CatalogItem[]> {
+  const staticItems = getCatalogItems(limit);
+  const customItems = await loadCustomCatalogItems();
+
+  const itemMap = new Map<string, CatalogItem>();
+
+  // Custom items first so freshly added entries are visible immediately.
+  customItems.forEach((item) => {
+    if (item.id) itemMap.set(item.id, item);
+  });
+
+  staticItems.forEach((item) => {
+    if (!itemMap.has(item.id)) {
+      itemMap.set(item.id, item);
+    }
+  });
+
+  return Array.from(itemMap.values()).slice(0, limit);
 }
 
 /**
@@ -80,11 +106,7 @@ async function loadCustomCatalogItems(): Promise<CatalogItem[]> {
  * Enrichment is batched (max `enrichLimit` items) and cached 24 h via Next.js fetch.
  */
 export async function getEnrichedCatalogItems(limit = 120, enrichLimit = limit): Promise<CatalogItem[]> {
-  const staticItems = getCatalogItems(limit);
-  const customItems = await loadCustomCatalogItems();
-  
-  // Combine: static first, then custom (up to limit)
-  const allItems = [...staticItems, ...customItems].slice(0, limit);
+  const allItems = await getCombinedCatalogItems(limit);
 
   // Lazy import keeps server-only code tree-shaken from client bundles
   const { resolveItemPoster } = await import("@/lib/tmdb");

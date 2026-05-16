@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { getCatalogItems } from "@/lib/catalog";
+import { getCombinedCatalogItems } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -10,8 +10,9 @@ export const metadata: Metadata = {
   description: "Direktzugriff auf Titel mit verfuegbaren Stream-Links aus dem Baba Ecke Katalog."
 };
 
-export default function StreamsPage() {
-  const streamable = getCatalogItems(220).filter((item) => Boolean(item.streamUrl));
+export default async function StreamsPage() {
+  const catalog = await getCombinedCatalogItems(220);
+  const streamable = catalog.filter((item) => Boolean(item.streamUrl));
 
   return (
     <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">

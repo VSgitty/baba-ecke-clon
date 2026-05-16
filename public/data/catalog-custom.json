@@ -10,5 +10,17 @@
     "rating": 7.5,
     "description": "James Camerons Meisterwerk mit beeindruckenden visuellen Effekten und einer packenden Geschichte der Pandora-Welt.",
     "streamUrl": ""
+  },
+  "teacup": {
+    "id": "teacup",
+    "title": "Teacup",
+    "type": "series",
+    "genre": "thriller",
+    "year": 2024,
+    "duration": "8 Episodes",
+    "poster": "https://m.media-amazon.com/images/M/MV5BMjE0YmFkODUtYTU2Mi00NWE1LWJjYmYtMzA0YjA4N2MzZTA2XkEyXkFqcGc@._V1_.jpg",
+    "rating": 7.2,
+    "description": "Mystery- und Survival-Serie um eine isolierte Gruppe, die mit einer unbekannten Bedrohung konfrontiert ist.",
+    "streamUrl": ""
   }
 }
