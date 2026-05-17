@@ -159,6 +159,65 @@
   margin-bottom: 14px;
 }
 
+.pulseRail {
+  margin-bottom: 12px;
+  border: 1px solid rgba(103, 214, 255, 0.18);
+  border-radius: 12px;
+  padding: 10px;
+  background: linear-gradient(130deg, rgba(7, 14, 24, 0.9), rgba(5, 10, 18, 0.72));
+}
+
+.pulseLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #7ceeff;
+  margin-bottom: 8px;
+}
+
+.pulseScroller {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pulseChip {
+  border-radius: 999px;
+  border: 1px solid rgba(114, 215, 255, 0.25);
+  background: rgba(17, 27, 40, 0.78);
+  color: #d8f7ff;
+  font-size: 11px;
+  white-space: nowrap;
+  padding: 6px 10px;
+}
+
+.filterRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.filterPill {
+  border-radius: 999px;
+  border: 1px solid rgba(112, 214, 255, 0.2);
+  color: #ccecff;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  background: rgba(10, 18, 28, 0.8);
+}
+
+.filterPillActive {
+  border-color: rgba(0, 255, 208, 0.6);
+  background: linear-gradient(140deg, rgba(0, 255, 208, 0.22), rgba(74, 222, 255, 0.18));
+  color: #f6feff;
+}
+
 .sectionLink {
   font-size: 12px;
   color: #13dbcf;
@@ -240,6 +299,24 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+.metricsRow {
+  margin-top: 10px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.metricTag {
+  border-radius: 999px;
+  border: 1px solid rgba(122, 216, 255, 0.22);
+  background: rgba(9, 15, 26, 0.88);
+  color: #abd4e8;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 9px;
 }
 
 .coverCard {
@@ -327,6 +404,35 @@
   color: #eef5ff;
 }
 
+.bottomDock {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  z-index: 80;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  border: 1px solid rgba(109, 209, 255, 0.22);
+  border-radius: 16px;
+  padding: 8px;
+  background: linear-gradient(145deg, rgba(7, 14, 23, 0.92), rgba(4, 9, 17, 0.84));
+  backdrop-filter: blur(12px) saturate(1.2);
+  box-shadow: 0 22px 36px -26px rgba(0, 0, 0, 0.95);
+}
+
+.bottomDockItem {
+  border-radius: 10px;
+  border: 1px solid rgba(103, 208, 255, 0.18);
+  background: rgba(12, 19, 30, 0.78);
+  text-align: center;
+  color: #d2edff;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 9px 6px;
+}
+
 @keyframes pulse {
   0%,
   100% {
@@ -398,5 +504,16 @@
 
   .franchiseMiniTitle {
     font-size: 12px;
+  }
+
+  .bottomDock {
+    left: 8px;
+    right: 8px;
+    gap: 6px;
+  }
+
+  .bottomDockItem {
+    font-size: 10px;
+    padding: 8px 4px;
   }
 }

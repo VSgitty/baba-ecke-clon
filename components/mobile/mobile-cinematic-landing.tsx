@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
@@ -54,6 +54,7 @@ export function MobileCinematicLanding({ categories, franchises }: MobileCinemat
   const [introDone, setIntroDone] = useState(false);
   const [mobileViewport, setMobileViewport] = useState(true);
   const [reducedEffects, setReducedEffects] = useState(false);
+  const [activeTypeFilter, setActiveTypeFilter] = useState<"all" | "Film" | "Serie">("all");
 
   const introRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLHeadingElement>(null);
@@ -61,6 +62,15 @@ export function MobileCinematicLanding({ categories, franchises }: MobileCinemat
 
   const { scrollYProgress } = useScroll();
   const heroShift = useTransform(scrollYProgress, [0, 0.35], [0, -120]);
+
+  const pulseChips = useMemo(() => {
+    const source = [...categories.flatMap((section) => section.items), ...franchises.flatMap((section) => section.items)];
+    const uniqueByTitle = new Map<string, MobileCoverItem>();
+    source.forEach((item) => {
+      if (!uniqueByTitle.has(item.title)) uniqueByTitle.set(item.title, item);
+    });
+    return Array.from(uniqueByTitle.values()).sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 14);
+  }, [categories, franchises]);
 
   useEffect(() => {
     const checkViewport = () => {
@@ -266,14 +276,51 @@ export function MobileCinematicLanding({ categories, franchises }: MobileCinemat
       </section>
 
       <section id="categories" className="relative px-4 pb-20">
+        <div className={styles.pulseRail}>
+          <div className={styles.pulseLabel}>Live Pulse</div>
+          <div className={styles.pulseScroller}>
+            {pulseChips.map((item) => (
+              <span key={`pulse-${item.id}`} className={styles.pulseChip}>
+                {item.title} · {(item.rating || 0).toFixed(1)}
+              </span>
+            ))}
+          </div>
+        </div>
+
         <div className={styles.sectionHeaderRow}>
           <h3 className={`${styles.collectionsHeading} font-display`}>Kategorien</h3>
           <span className={styles.sectionLink}>Alle ansehen</span>
         </div>
 
+        <div className={styles.filterRow}>
+          {(["all", "Film", "Serie"] as const).map((filter) => (
+            <button
+              key={filter}
+              type="button"
+              className={`${styles.filterPill} ${activeTypeFilter === filter ? styles.filterPillActive : ""}`}
+              onClick={() => setActiveTypeFilter(filter)}
+            >
+              {filter === "all" ? "Alle" : filter}
+            </button>
+          ))}
+        </div>
+
         <div className={styles.categoryStack}>
           {categories.map((category) => (
             <section key={category.id} className={styles.categorySection}>
+              {(() => {
+                const visibleItems =
+                  activeTypeFilter === "all"
+                    ? category.items
+                    : category.items.filter((item) => item.type === activeTypeFilter);
+
+                const avgRating =
+                  visibleItems.length > 0
+                    ? visibleItems.reduce((sum, item) => sum + (item.rating || 0), 0) / visibleItems.length
+                    : 0;
+
+                return (
+                  <>
               <div className={styles.categoryHero} style={{ borderColor: `${category.accent}77` }}>
                 <img
                   src={category.heroImage}
@@ -293,8 +340,14 @@ export function MobileCinematicLanding({ categories, franchises }: MobileCinemat
                 </div>
               </div>
 
+              <div className={styles.metricsRow}>
+                <span className={styles.metricTag}>{visibleItems.length} Titel</span>
+                <span className={styles.metricTag}>Ø {avgRating.toFixed(1)}/10</span>
+                <span className={styles.metricTag}>{activeTypeFilter === "all" ? "Mix" : activeTypeFilter}</span>
+              </div>
+
               <div className={styles.coversGrid}>
-                {category.items.slice(0, 8).map((item) => (
+                {visibleItems.slice(0, 8).map((item) => (
                   <article key={`${category.id}-${item.id}`} className={styles.coverCard}>
                     <img
                       src={item.poster}
@@ -313,6 +366,9 @@ export function MobileCinematicLanding({ categories, franchises }: MobileCinemat
                   </article>
                 ))}
               </div>
+                  </>
+                );
+              })()}
             </section>
           ))}
         </div>
@@ -371,6 +427,19 @@ export function MobileCinematicLanding({ categories, franchises }: MobileCinemat
           ))}
         </div>
       </section>
+
+      <nav className={styles.bottomDock}>
+        {[
+          { label: "Home", href: "#hero" },
+          { label: "Kategorien", href: "#categories" },
+          { label: "Franchises", href: "#franchises" },
+          { label: "Profil", href: "/my-list" }
+        ].map((item) => (
+          <a key={item.label} href={item.href} className={styles.bottomDockItem}>
+            {item.label}
+          </a>
+        ))}
+      </nav>
     </div>
   );
 }
