@@ -306,27 +306,6 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
     };
   }, [closeInfoCard]);
 
-  function handleCoverMove(event: React.MouseEvent<HTMLElement>) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const px = (event.clientX - rect.left) / rect.width;
-    const py = (event.clientY - rect.top) / rect.height;
-    const tiltX = ((0.5 - py) * 14).toFixed(2);
-    const tiltY = ((px - 0.5) * 16).toFixed(2);
-    const mx = (px * 100).toFixed(2);
-    const my = (py * 100).toFixed(2);
-    event.currentTarget.style.setProperty("--tilt-x", `${tiltX}deg`);
-    event.currentTarget.style.setProperty("--tilt-y", `${tiltY}deg`);
-    event.currentTarget.style.setProperty("--mx", `${mx}%`);
-    event.currentTarget.style.setProperty("--my", `${my}%`);
-  }
-
-  function resetCoverMove(event: React.MouseEvent<HTMLElement>) {
-    event.currentTarget.style.setProperty("--tilt-x", "0deg");
-    event.currentTarget.style.setProperty("--tilt-y", "0deg");
-    event.currentTarget.style.setProperty("--mx", "50%");
-    event.currentTarget.style.setProperty("--my", "50%");
-  }
-
   return (
     <div className="space-y-10">
       <section className="site-shell grid w-full gap-3 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
@@ -618,9 +597,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                         <motion.article
                           key={item.id}
                           className="cover-card catalog-shelf-card cursor-pointer p-0"
-                          onMouseMove={handleCoverMove}
                           onClick={(e) => handleCardClick(item, e)}
-                          onMouseLeave={resetCoverMove}
                           onKeyDown={(event) => handleCardKeyDown(item, event)}
                           role="button"
                           tabIndex={0}

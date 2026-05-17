@@ -6,7 +6,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { LenisProvider } from "@/components/lenis-provider";
-import { CinematicSideReels } from "@/components/cinematic-side-reels";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -75,7 +74,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${spaceGrotesk.variable} ${bebasNeue.variable} min-h-screen font-sans`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <LenisProvider>
-            <CinematicSideReels />
             <div className="relative flex min-h-screen flex-col overflow-x-clip">
               <SiteHeader />
               <main className="flex-1 pt-16">{children}</main>

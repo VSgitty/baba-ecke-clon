@@ -2,12 +2,10 @@
 
 import Image from "next/image";
 import { useRef } from "react";
-import { motion, useMotionTemplate, useMotionValue, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 
 export function HeroSection() {
   const sectionRef = useRef<HTMLElement | null>(null);
-  const pointerX = useMotionValue(0);
-  const pointerY = useMotionValue(0);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -15,40 +13,19 @@ export function HeroSection() {
   });
 
   const parallaxYBack  = useTransform(scrollYProgress, [0, 1], ["0%", "28%"]);
-  const parallaxYFront = useTransform(scrollYProgress, [0, 1], ["0%", "16%"]);
   const fogOpacity     = useTransform(scrollYProgress, [0, 1], [0.5, 0.94]);
   const titleY         = useTransform(scrollYProgress, [0, 1], ["0%", "22%"]);
   const titleOpacity   = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
-
-  const driftX = useMotionTemplate`calc(${pointerX}px * 1.4)`;
-  const driftY = useMotionTemplate`calc(${pointerY}px * 1.6)`;
-  const driftXFront = useMotionTemplate`calc(${pointerX}px * 0.6)`;
-  const driftYFront = useMotionTemplate`calc(${pointerY}px * 0.8)`;
-
-  function handlePointerMove(event: React.MouseEvent<HTMLElement>) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width - 0.5) * 18;
-    const y = ((event.clientY - rect.top) / rect.height - 0.5) * 14;
-    pointerX.set(x);
-    pointerY.set(y);
-  }
-
-  function resetPointer() {
-    pointerX.set(0);
-    pointerY.set(0);
-  }
 
   return (
     <section
       ref={sectionRef}
       className="relative -mt-16 overflow-hidden pb-0 pt-16"
-      onMouseMove={handlePointerMove}
-      onMouseLeave={resetPointer}
     >
       {/* Layer 1 — deep background image */}
       <motion.div
         className="hero-parallax-back absolute inset-0 z-0 scale-110"
-        style={{ y: parallaxYBack, x: driftX }}
+        style={{ y: parallaxYBack }}
       >
         <Image
           src="/c/lost-wallpaper.png"
@@ -60,22 +37,7 @@ export function HeroSection() {
         />
       </motion.div>
 
-      {/* Layer 2 — soft foreground blur overlay */}
-      <motion.div
-        className="hero-parallax-front absolute inset-0 z-[1] scale-110"
-        style={{ y: parallaxYFront, x: driftXFront }}
-      >
-        <Image
-          src="/c/lost-wallpaper.png"
-          alt="LOST Wallpaper Overlay"
-          fill
-          priority
-          className="object-cover"
-          sizes="100vw"
-        />
-      </motion.div>
-
-      {/* Layer 3 — cinematic fog */}
+      {/* Layer 2 — cinematic fog */}
       <motion.div className="hero-parallax-fog absolute inset-0 z-[2]" style={{ opacity: fogOpacity }} />
 
       {/* Layer 4 — ambient light leaks */}

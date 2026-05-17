@@ -85,32 +85,34 @@ body {
   min-height: 100dvh;
 }
 
-/* VHS noise / film grain */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9999;
-  opacity: 0.028;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 160px 160px;
-}
+/* VHS noise / scanlines are intentionally desktop-only to reduce repaint cost. */
+@media (min-width: 1280px) and (prefers-reduced-motion: no-preference) {
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.024;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+  }
 
-/* CRT scanlines — ultra subtle */
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9998;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.016) 0px,
-    rgba(255, 255, 255, 0.016) 1px,
-    transparent 1px,
-    transparent 4px
-  );
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9998;
+    opacity: 0.55;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.014) 0px,
+      rgba(255, 255, 255, 0.014) 1px,
+      transparent 1px,
+      transparent 5px
+    );
+  }
 }
 
 ::selection {
@@ -1135,6 +1137,27 @@ h3,
     radial-gradient(ellipse 48% 35% at 24% 0%, rgba(168, 85, 247, 0.14), transparent),
     radial-gradient(ellipse 42% 32% at 76% 10%, rgba(59, 130, 246, 0.16), transparent);
   animation: ambient-drift 15s ease-in-out infinite;
+}
+
+@media (max-width: 1024px) {
+  .site-navbar::after,
+  .ticker-track,
+  .franchise-rail-track,
+  .continue-card-rail-track,
+  .franchise-top-aurora {
+    animation: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-navbar::after,
+  .ticker-track,
+  .franchise-rail-track,
+  .continue-card-rail-track,
+  .franchise-top-aurora,
+  .cover-card:hover .cover-shine {
+    animation: none !important;
+  }
 }
 
 .franchise-world {
