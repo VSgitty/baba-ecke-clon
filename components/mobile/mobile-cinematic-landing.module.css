@@ -1,9 +1,8 @@
 .mobileWorld {
   background:
-    radial-gradient(120% 60% at 50% -10%, rgba(0, 255, 208, 0.12), transparent 40%),
-    radial-gradient(110% 45% at 10% 6%, rgba(255, 45, 85, 0.2), transparent 38%),
-    radial-gradient(95% 56% at 90% 2%, rgba(129, 104, 255, 0.22), transparent 36%),
-    linear-gradient(180deg, #020307 0%, #03060c 40%, #050713 78%, #03040a 100%);
+    radial-gradient(110% 56% at 50% -10%, rgba(0, 255, 208, 0.12), transparent 40%),
+    radial-gradient(100% 42% at 10% 5%, rgba(255, 45, 85, 0.16), transparent 36%),
+    linear-gradient(180deg, #03060d 0%, #030812 38%, #040b14 68%, #02060b 100%);
   padding-bottom: max(20px, env(safe-area-inset-bottom));
 }
 
@@ -83,26 +82,12 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
-.menuCta {
-  margin-top: 8px;
-  display: block;
-  border: 1px solid rgba(0, 255, 208, 0.35);
-  border-radius: 16px;
-  padding: 14px 16px;
-  font-size: 13px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  text-align: center;
-  color: #031016;
-  background: linear-gradient(130deg, #00ffd0, #6ef7ff);
-}
-
 .heroBg {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
-  filter: saturate(1.1) contrast(1.1);
+  filter: saturate(1.08) contrast(1.06);
 }
 
 .heroTint {
@@ -111,7 +96,7 @@
   background:
     radial-gradient(70% 45% at 50% 13%, rgba(0, 255, 208, 0.24), transparent 56%),
     radial-gradient(56% 44% at 70% 22%, rgba(255, 45, 85, 0.24), transparent 58%),
-    linear-gradient(180deg, rgba(1, 2, 6, 0.16), rgba(2, 4, 8, 0.7) 58%, rgba(0, 0, 0, 0.88));
+    linear-gradient(180deg, rgba(1, 2, 6, 0.12), rgba(2, 4, 8, 0.68) 58%, rgba(0, 0, 0, 0.9));
 }
 
 .heroScanline {
@@ -159,166 +144,187 @@
   padding: 12px 18px;
 }
 
-.heroChip {
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.04);
-  padding: 6px 10px;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #cfe1ff;
-}
-
 .canvasWrap {
-  height: clamp(190px, 34vw, 240px);
+  height: clamp(170px, 31vw, 220px);
   border-radius: 24px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: radial-gradient(circle at 50% 50%, rgba(0, 255, 208, 0.15), rgba(1, 4, 10, 0.9));
 }
 
-.collectionsHeading {
-  font-size: clamp(2.05rem, 7.4vw, 2.55rem);
-  line-height: 0.95;
-  letter-spacing: 0.01em;
+.sectionHeaderRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
 }
 
-.collectionsSubheading {
-  max-width: 40ch;
+.sectionLink {
+  font-size: 12px;
+  color: #13dbcf;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.collectionsHeading {
+  font-size: clamp(2rem, 7vw, 2.5rem);
+  line-height: 0.94;
+  letter-spacing: 0.01em;
 }
 
 .collectionTitle {
   font-size: clamp(1.5rem, 6.2vw, 2rem);
-  letter-spacing: 0.01em;
+  line-height: 0.95;
 }
 
 .collectionSubtitle {
   max-width: 36ch;
   font-size: 12px;
   line-height: 1.35;
+  color: #a5bacf;
 }
 
-.storyRail {
+.categoryStack,
+.franchiseStack {
   display: grid;
-  gap: 14px;
+  gap: 18px;
 }
 
-.storyCard,
-.storyCardSecondary {
-  border-radius: 22px;
-  padding: 18px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(10px);
+.categorySection,
+.franchiseSection {
+  border: 1px solid rgba(110, 208, 255, 0.15);
+  border-radius: 18px;
+  padding: 12px;
+  background: linear-gradient(155deg, rgba(5, 12, 21, 0.88), rgba(4, 9, 17, 0.76));
+  box-shadow: 0 24px 36px -28px rgba(0, 0, 0, 0.95), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
 }
 
-.storyCard {
-  background: linear-gradient(145deg, rgba(153, 41, 75, 0.22), rgba(28, 9, 26, 0.58));
-}
-
-.storyCardSecondary {
-  background: linear-gradient(145deg, rgba(20, 80, 120, 0.24), rgba(6, 16, 28, 0.58));
-}
-
-.cardScroller {
-  margin-top: 14px;
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: clamp(196px, 62vw, 280px);
-  gap: 12px;
-  overflow-x: auto;
-  padding: 8px 16px 10px;
-  scroll-snap-type: x mandatory;
-  overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
-}
-
-.cardScroller::-webkit-scrollbar {
-  height: 4px;
-}
-
-.cardScroller::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.cardScroller::-webkit-scrollbar-thumb {
-  background: linear-gradient(90deg, rgba(0, 255, 208, 0.5), rgba(255, 45, 85, 0.5));
-  border-radius: 999px;
-}
-
-.collectionCard {
+.categoryHero,
+.franchiseHero {
   position: relative;
   overflow: hidden;
-  min-height: 0;
-  aspect-ratio: 0.68;
-  border-radius: 22px;
-  border: 1px solid rgba(126, 216, 255, 0.26);
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
-  scroll-snap-align: start;
-  transform: translateZ(0);
-  box-shadow: 0 16px 34px -20px rgba(0, 0, 0, 0.88), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  min-height: 176px;
 }
 
-.collectionPoster {
+.categoryHeroImage,
+.franchiseHeroImage {
+  width: 100%;
+  height: 100%;
+  min-height: 176px;
+  object-fit: cover;
+  object-position: center 20%;
+}
+
+.categoryHeroTint,
+.franchiseHeroOverlay {
   position: absolute;
   inset: 0;
+  background:
+    linear-gradient(180deg, rgba(2, 6, 14, 0.12) 20%, rgba(2, 8, 16, 0.95) 100%),
+    linear-gradient(165deg, rgba(255, 255, 255, 0.18), transparent 36%);
+}
+
+.categoryHeroMeta,
+.franchiseHeroContent {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 2;
+}
+
+.coversGrid {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.coverCard {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(106, 206, 255, 0.2);
+  aspect-ratio: 0.66;
+  background: #0b1220;
+}
+
+.coverPoster {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center top;
-  transform: scale(1.04);
 }
 
-.posterSheen {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(165deg, rgba(255, 255, 255, 0.28), transparent 34%),
-    linear-gradient(180deg, rgba(4, 9, 16, 0.04) 30%, rgba(3, 6, 14, 0.94));
-}
-
-.collectionMeta {
+.coverMeta {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 14px 12px 12px;
-  background: linear-gradient(180deg, transparent, rgba(2, 4, 11, 0.82) 30%, rgba(2, 4, 10, 0.95));
-  backdrop-filter: blur(3px);
+  padding: 10px;
+  background: linear-gradient(180deg, transparent, rgba(2, 5, 12, 0.84) 35%, rgba(2, 5, 10, 0.96));
 }
 
-.cardTitle {
-  font-size: clamp(1.55rem, 6vw, 2rem);
-  line-height: 0.92;
-  letter-spacing: 0.01em;
-  text-wrap: balance;
+.coverType {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6ce6ff;
 }
 
-.rowDivider {
-  margin: 16px 16px 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+.coverTitle {
+  margin-top: 4px;
+  font-size: 17px;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: #eef5ff;
 }
 
-@media (max-width: 390px) {
-  .heroPanel {
-    border-radius: 24px;
-    padding: 20px 16px;
-  }
+.coverInfo {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #b4c4d6;
+}
 
-  .cardScroller {
-    grid-auto-columns: 64vw;
-    gap: 10px;
-    padding-inline: 12px;
-  }
+.franchiseCoverStrip {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
 
-  .collectionCard {
-    border-radius: 20px;
-  }
+.franchiseMiniCard {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid rgba(106, 206, 255, 0.18);
+  aspect-ratio: 0.68;
+  background: #0b1220;
+}
 
-  .cardTitle {
-    font-size: clamp(1.35rem, 7.1vw, 1.78rem);
-  }
+.franchiseMiniPoster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.franchiseMiniMeta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 8px;
+  background: linear-gradient(180deg, transparent, rgba(2, 5, 12, 0.9) 45%, rgba(2, 5, 10, 0.97));
+}
+
+.franchiseMiniTitle {
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 1.05;
+  color: #eef5ff;
 }
 
 @keyframes pulse {
@@ -373,5 +379,24 @@
   100% {
     opacity: 0;
     visibility: hidden;
+  }
+}
+
+@media (max-width: 390px) {
+  .heroPanel {
+    border-radius: 24px;
+    padding: 20px 16px;
+  }
+
+  .coversGrid {
+    gap: 8px;
+  }
+
+  .coverTitle {
+    font-size: 15px;
+  }
+
+  .franchiseMiniTitle {
+    font-size: 12px;
   }
 }

@@ -8,20 +8,32 @@ import gsap from "gsap";
 
 import styles from "@/components/mobile/mobile-cinematic-landing.module.css";
 
-export type MobileCollection = {
+type MobileCoverItem = {
+  id: string;
+  title: string;
+  year?: number;
+  rating?: number;
+  poster: string;
+  type: "Film" | "Serie";
+};
+
+export type MobileCategorySection = {
   id: string;
   title: string;
   subtitle: string;
   accent: string;
   glow: string;
-  items: Array<{
-    id: string;
-    title: string;
-    year?: number;
-    rating?: number;
-    poster: string;
-    type: "Film" | "Serie";
-  }>;
+  heroImage: string;
+  items: MobileCoverItem[];
+};
+
+export type MobileFranchiseSection = {
+  id: string;
+  title: string;
+  subtitle: string;
+  accent: string;
+  heroImage: string;
+  items: MobileCoverItem[];
 };
 
 const MobileAtmosphere3D = dynamic(
@@ -32,7 +44,12 @@ const MobileAtmosphere3D = dynamic(
   }
 );
 
-export function MobileCinematicLanding({ collections }: { collections: MobileCollection[] }) {
+type MobileCinematicLandingProps = {
+  categories: MobileCategorySection[];
+  franchises: MobileFranchiseSection[];
+};
+
+export function MobileCinematicLanding({ categories, franchises }: MobileCinematicLandingProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [introDone, setIntroDone] = useState(false);
   const [mobileViewport, setMobileViewport] = useState(true);
@@ -44,7 +61,6 @@ export function MobileCinematicLanding({ collections }: { collections: MobileCol
 
   const { scrollYProgress } = useScroll();
   const heroShift = useTransform(scrollYProgress, [0, 0.35], [0, -120]);
-  const parallaxOpacity = useTransform(scrollYProgress, [0.2, 0.48], [1, 0.35]);
 
   useEffect(() => {
     const checkViewport = () => {
@@ -198,25 +214,27 @@ export function MobileCinematicLanding({ collections }: { collections: MobileCol
               CLOSE
             </button>
             <div className="mx-auto mt-24 w-[min(92vw,560px)] space-y-3 px-2">
-              {["Hero", "Collections", "Vault", "Streams"].map((item) => (
+              {[
+                { label: "Hero", href: "#hero" },
+                { label: "Kategorien", href: "#categories" },
+                { label: "Franchises", href: "#franchises" },
+                { label: "My List", href: "/my-list" }
+              ].map((item) => (
                 <a
-                  key={item}
-                  href={item === "Hero" ? "#hero" : item === "Collections" ? "#collections" : "#vault"}
+                  key={item.label}
+                  href={item.href}
                   onClick={() => setMenuOpen(false)}
                   className={styles.menuLink}
                 >
-                  {item}
+                  {item.label}
                 </a>
               ))}
-              <Link href="/my-list" onClick={() => setMenuOpen(false)} className={styles.menuCta}>
-                OPEN MY LIST
-              </Link>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <section id="hero" className="relative min-h-[100svh] pt-28 pb-14">
+      <section id="hero" className="relative min-h-[92svh] pt-28 pb-12">
         <motion.div style={{ y: heroShift }} className="absolute inset-0">
           <img src="/c/header.jpg" alt="Cinematic hero" className={styles.heroBg} loading="eager" />
           <div className={styles.heroTint} />
@@ -227,112 +245,129 @@ export function MobileCinematicLanding({ collections }: { collections: MobileCol
 
         <div className="relative z-10 px-4">
           <div className={styles.heroPanel}>
-            <p className="text-[11px] uppercase tracking-[0.34em] text-cyan-300">Streaming Future Meets Retro Tape Culture</p>
+            <p className="text-[11px] uppercase tracking-[0.34em] text-cyan-300">Franchise Archive Mobile</p>
             <h2 className="mt-3 font-display text-5xl leading-[0.95]">
-              ENTER THE
+              FRANCHISE
               <br />
-              COLLECTION
+              COLLECTIONS
             </h2>
             <p className="mt-4 max-w-[33ch] text-sm leading-relaxed text-zinc-300">
-              Eine mobile AAA Experience zwischen Netflix Intro, Apple-Keynote Motion und 90s Videothek-Atmosphaere.
+              Kategorien mit eigener Hero-Identity, klare Cover-Grids und visuell gruppierte Franchise-Welten.
             </p>
-            <a ref={ctaRef} href="#collections" className={styles.heroCta}>
-              ENTER THE COLLECTION
+            <a ref={ctaRef} href="#categories" className={styles.heroCta}>
+              KOLLEKTIONEN ENTDECKEN
             </a>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              {[
-                "VHS Glow",
-                "Neon Cinema",
-                "Franchise Worlds",
-                "Retro Future",
-                "AAA Motion"
-              ].map((chip) => (
-                <span key={chip} className={styles.heroChip}>
-                  {chip}
-                </span>
-              ))}
-            </div>
           </div>
         </div>
 
-        <div className="relative z-10 mt-10 px-4">
+        <div className="relative z-10 mt-8 px-4">
           <MobileAtmosphere3D reducedEffects={reducedEffects} />
         </div>
       </section>
 
-      <section className="relative px-4 pb-12" id="vault">
-        <motion.div style={{ opacity: parallaxOpacity }} className={styles.storyRail}>
-          <div className={styles.storyCard}>
-            <p className="text-[10px] uppercase tracking-[0.35em] text-fuchsia-300">Chapter One</p>
-            <h3 className="mt-2 font-display text-3xl">Retro Videothek Reimagined</h3>
-            <p className="mt-3 text-sm text-zinc-300">Langsames Story-Scrolling, Tiefe durch Layer, chromatische Highlights und cineastische Beleuchtung fuer mobile Touch-Navigation.</p>
-          </div>
-          <div className={styles.storyCardSecondary}>
-            <p className="text-[10px] uppercase tracking-[0.35em] text-cyan-300">Chapter Two</p>
-            <h3 className="mt-2 font-display text-3xl">Streaming Platform DNA</h3>
-            <p className="mt-3 text-sm text-zinc-300">Glas-Chrome Cards, Swipe-Galerien und Performance-optimierte Effekte mit adaptiver Last fuer schwache Geraete.</p>
-          </div>
-        </motion.div>
-      </section>
-
-      <section id="collections" className="relative pb-24">
-        <div className="px-4">
-          <h3 className={`${styles.collectionsHeading} font-display`}>Franchise Collections</h3>
-          <p className={`${styles.collectionsSubheading} mt-2 text-sm text-zinc-300`}>
-            Sieben Universen mit eigener Farbwelt, Lichtstimmung und Motion-Signatur.
-          </p>
+      <section id="categories" className="relative px-4 pb-20">
+        <div className={styles.sectionHeaderRow}>
+          <h3 className={`${styles.collectionsHeading} font-display`}>Kategorien</h3>
+          <span className={styles.sectionLink}>Alle ansehen</span>
         </div>
 
-        <div className="mt-6 space-y-8">
-          {collections.map((collection, rowIndex) => (
-            <section key={collection.id} className="relative">
-              <div className="px-4">
-                <div className="flex items-baseline justify-between">
-                  <h4 className={`${styles.collectionTitle} font-display leading-none`} style={{ color: collection.accent }}>
-                    {collection.title}
+        <div className={styles.categoryStack}>
+          {categories.map((category) => (
+            <section key={category.id} className={styles.categorySection}>
+              <div className={styles.categoryHero} style={{ borderColor: `${category.accent}77` }}>
+                <img
+                  src={category.heroImage}
+                  alt={category.title}
+                  className={styles.categoryHeroImage}
+                  loading="lazy"
+                  onError={(event) => {
+                    event.currentTarget.src = "/c/header.jpg";
+                  }}
+                />
+                <div className={styles.categoryHeroTint} style={{ boxShadow: `inset 0 -120px 80px -40px ${category.glow}` }} />
+                <div className={styles.categoryHeroMeta}>
+                  <h4 className={`${styles.collectionTitle} font-display`} style={{ color: category.accent }}>
+                    {category.title}
                   </h4>
-                  <span className="text-[10px] uppercase tracking-[0.28em] text-zinc-400">Swipe</span>
+                  <p className={styles.collectionSubtitle}>{category.subtitle}</p>
                 </div>
-                <p className={`${styles.collectionSubtitle} mt-2 text-xs text-zinc-400`}>{collection.subtitle}</p>
               </div>
 
-              <div className={styles.cardScroller} style={{ boxShadow: `inset 0 0 120px -40px ${collection.glow}` }}>
-                {collection.items.map((item, itemIndex) => (
-                  <motion.article
-                    key={`${collection.id}-${item.id}-${itemIndex}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.2 }}
-                    transition={{ duration: 0.44, delay: itemIndex * 0.03 }}
-                    className={styles.collectionCard}
-                    style={{ borderColor: `${collection.accent}66` }}
-                  >
+              <div className={styles.coversGrid}>
+                {category.items.slice(0, 8).map((item) => (
+                  <article key={`${category.id}-${item.id}`} className={styles.coverCard}>
                     <img
                       src={item.poster}
                       alt={item.title}
+                      className={styles.coverPoster}
                       loading="lazy"
-                      decoding="async"
-                      className={styles.collectionPoster}
                       onError={(event) => {
                         event.currentTarget.src = "/c/header.jpg";
                       }}
                     />
-                    <div className={styles.posterSheen} />
-                    <div className={styles.collectionMeta}>
-                      <p className="line-clamp-1 text-xs uppercase tracking-[0.2em] text-cyan-200">{item.type}</p>
-                      <h5 className={`${styles.cardTitle} mt-1 line-clamp-2 font-display`}>{item.title}</h5>
-                      <div className="mt-3 flex items-center justify-between text-xs text-zinc-300">
-                        <span>{item.year || "N/A"}</span>
-                        <span>{(item.rating || 0).toFixed(1)}/10</span>
-                      </div>
+                    <div className={styles.coverMeta}>
+                      <p className={styles.coverType}>{item.type}</p>
+                      <h5 className={styles.coverTitle}>{item.title}</h5>
+                      <p className={styles.coverInfo}>{item.year || "N/A"} · {(item.rating || 0).toFixed(1)}/10</p>
                     </div>
-                  </motion.article>
+                  </article>
                 ))}
               </div>
-
-              {rowIndex !== collections.length - 1 && <div className={styles.rowDivider} />}
             </section>
+          ))}
+        </div>
+      </section>
+
+      <section id="franchises" className="relative px-4 pb-24">
+        <div className={styles.sectionHeaderRow}>
+          <h3 className={`${styles.collectionsHeading} font-display`}>Franchise Gruppen</h3>
+          <span className={styles.sectionLink}>Alle ansehen</span>
+        </div>
+
+        <div className={styles.franchiseStack}>
+          {franchises.map((franchise) => (
+            <article key={franchise.id} className={styles.franchiseSection}>
+              <div className={styles.franchiseHero} style={{ borderColor: `${franchise.accent}77` }}>
+                <img
+                  src={franchise.heroImage}
+                  alt={franchise.title}
+                  className={styles.franchiseHeroImage}
+                  loading="lazy"
+                  onError={(event) => {
+                    event.currentTarget.src = "/c/header.jpg";
+                  }}
+                />
+                <div className={styles.franchiseHeroOverlay} />
+                <div className={styles.franchiseHeroContent}>
+                  <p className={styles.coverType}>Zur Franchise</p>
+                  <h4 className={`${styles.collectionTitle} font-display`} style={{ color: franchise.accent }}>
+                    {franchise.title}
+                  </h4>
+                  <p className={styles.collectionSubtitle}>{franchise.subtitle}</p>
+                </div>
+              </div>
+
+              <div className={styles.franchiseCoverStrip}>
+                {franchise.items.slice(0, 6).map((item) => (
+                  <article key={`${franchise.id}-${item.id}`} className={styles.franchiseMiniCard}>
+                    <img
+                      src={item.poster}
+                      alt={item.title}
+                      className={styles.franchiseMiniPoster}
+                      loading="lazy"
+                      onError={(event) => {
+                        event.currentTarget.src = "/c/header.jpg";
+                      }}
+                    />
+                    <div className={styles.franchiseMiniMeta}>
+                      <p className={styles.coverType}>{item.type}</p>
+                      <h5 className={styles.franchiseMiniTitle}>{item.title}</h5>
+                      <p className={styles.coverInfo}>{item.year || "N/A"}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </article>
           ))}
         </div>
       </section>
