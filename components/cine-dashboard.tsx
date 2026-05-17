@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Clock3, Dice5, ExternalLink, Film, Filter, Flame, GripVertical, Play, Sparkles, Star, RotateCcw } from "lucide-react";
+import { Clock3, Dice5, ExternalLink, Film, Filter, Flame, GripVertical, ImagePlus, Play, RotateCcw, Sparkles, Star, WandSparkles, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import type { CatalogItem } from "@/lib/catalog";
@@ -14,8 +14,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 const WATCHLIST_KEY = "baba_watchlist_v3";
 const FRANCHISE_KEY = "baba_franchise_v3";
 const DRAG_LAYOUT_KEY = "baba_drag_layout_v1";
+const SHELF_CUSTOMIZATION_KEY = "baba_shelf_customization_v1";
 
 type FranchiseState = Record<string, Record<string, boolean>>;
+
+type ShelfCustomization = {
+  label?: string;
+  kicker?: string;
+  bgImage?: string;
+  tint?: string;
+  overlayOpacity?: number;
+  brightness?: number;
+  contrast?: number;
+  saturation?: number;
+  blurPx?: number;
+  zoom?: number;
+  positionY?: number;
+};
 
 type CineDashboardProps = {
   catalog: CatalogItem[];
@@ -29,6 +44,19 @@ type CatalogShelf = {
   icon: LucideIcon;
   items: CatalogItem[];
 };
+
+const SHELF_BLUEPRINTS: Array<Omit<CatalogShelf, "items">> = [
+  { key: "horror", label: "Horror Rack", kicker: "Night Shelf", accent: "var(--neon-pink)", icon: Flame },
+  { key: "sci-fi", label: "Sci-Fi Console", kicker: "Future Shelf", accent: "var(--neon-cyan)", icon: Sparkles },
+  { key: "action", label: "Action Wall", kicker: "Impact Shelf", accent: "var(--brand)", icon: Play },
+  { key: "anime-fantasy", label: "Anime / Fantasy", kicker: "Illustrated Shelf", accent: "var(--neon-purple)", icon: Film },
+  { key: "drama", label: "Drama / Mystery", kicker: "Story Shelf", accent: "var(--brand-strong)", icon: Clock3 },
+  { key: "cult", label: "Cult Corner", kicker: "Wild Shelf", accent: "#cbd5e1", icon: Dice5 }
+];
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
 
 const FRANCHISE_SVG_BY_SLUG: Record<string, string> = {
   "harry-potter": "/c/franchise/fantasy.svg",
@@ -75,6 +103,11 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
   const [roulettePick, setRoulettePick] = useState<CatalogItem | null>(null);
   const [isDragMode, setIsDragMode] = useState(false);
   const [dragLayout, setDragLayout] = useState<Record<string, { shelf: string; order: number }>>({});
+  const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
+  const [activeCustomizeShelf, setActiveCustomizeShelf] = useState<string>(SHELF_BLUEPRINTS[0]?.key ?? "horror");
+  const [shelfCustomization, setShelfCustomization] = useState<Record<string, ShelfCustomization>>({});
+  const [isOptimizingImage, setIsOptimizingImage] = useState(false);
+  const uploadInputRef = useRef<HTMLInputElement | null>(null);
 
   type InfoPos = { left: number; top: number; showLeft: boolean };
   const [hoveredItem, setHoveredItem] = useState<CatalogItem | null>(null);
@@ -88,6 +121,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
     const rawWatchlist = window.localStorage.getItem(WATCHLIST_KEY);
     const rawFranchise = window.localStorage.getItem(FRANCHISE_KEY);
     const rawDragLayout = window.localStorage.getItem(DRAG_LAYOUT_KEY);
+    const rawShelfCustomization = window.localStorage.getItem(SHELF_CUSTOMIZATION_KEY);
 
     if (rawWatchlist) {
       try {
@@ -115,7 +149,156 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
         setDragLayout({});
       }
     }
+
+    if (rawShelfCustomization) {
+      try {
+        setShelfCustomization(JSON.parse(rawShelfCustomization) as Record<string, ShelfCustomization>);
+      } catch {
+        setShelfCustomization({});
+      }
+    }
   }, []);
+
+  const saveShelfCustomization = useCallback((next: Record<string, ShelfCustomization>) => {
+    setShelfCustomization(next);
+    window.localStorage.setItem(SHELF_CUSTOMIZATION_KEY, JSON.stringify(next));
+  }, []);
+
+  const updateShelfCustomization = useCallback(
+    (shelfKey: string, patch: Partial<ShelfCustomization>) => {
+      setShelfCustomization((prev) => {
+        const next = {
+          ...prev,
+          [shelfKey]: {
+            ...(prev[shelfKey] ?? {}),
+            ...patch
+          }
+        };
+        window.localStorage.setItem(SHELF_CUSTOMIZATION_KEY, JSON.stringify(next));
+        return next;
+      });
+    },
+    []
+  );
+
+  const resetShelfCustomization = useCallback(
+    (shelfKey: string) => {
+      const next = { ...shelfCustomization };
+      delete next[shelfKey];
+      saveShelfCustomization(next);
+    },
+    [saveShelfCustomization, shelfCustomization]
+  );
+
+  const processUploadedImage = useCallback(async (file: File) => {
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ""));
+      reader.onerror = () => reject(new Error("File konnte nicht gelesen werden"));
+      reader.readAsDataURL(file);
+    });
+
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Bild konnte nicht geladen werden"));
+      img.src = dataUrl;
+    });
+
+    const maxWidth = 1920;
+    const scale = Math.min(1, maxWidth / image.width);
+    const width = Math.max(320, Math.round(image.width * scale));
+    const height = Math.max(220, Math.round(image.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return {
+        optimizedImage: dataUrl,
+        derived: {
+          brightness: 1.04,
+          contrast: 1.08,
+          saturation: 1.08,
+          overlayOpacity: 0.48,
+          blurPx: 0.5
+        }
+      };
+    }
+
+    ctx.drawImage(image, 0, 0, width, height);
+
+    const sample = ctx.getImageData(0, 0, width, height).data;
+    let luminanceSum = 0;
+    let luminanceSqSum = 0;
+    let sampleCount = 0;
+    const step = Math.max(1, Math.floor((width * height) / 12000));
+    for (let i = 0; i < sample.length; i += 4 * step) {
+      const r = sample[i] ?? 0;
+      const g = sample[i + 1] ?? 0;
+      const b = sample[i + 2] ?? 0;
+      const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      luminanceSum += l;
+      luminanceSqSum += l * l;
+      sampleCount += 1;
+    }
+
+    const avgLum = sampleCount ? luminanceSum / sampleCount : 128;
+    const variance = sampleCount ? luminanceSqSum / sampleCount - avgLum * avgLum : 2500;
+    const stdDev = Math.sqrt(Math.max(0, variance));
+
+    const brightness = clamp(1 + (120 - avgLum) / 420, 0.82, 1.2);
+    const contrast = clamp(1.06 + (74 - stdDev) / 300, 1.02, 1.22);
+    const saturation = clamp(1.05 + (84 - stdDev) / 450, 1, 1.2);
+    const overlayOpacity = clamp(0.44 + (avgLum > 160 ? 0.08 : 0) + (avgLum < 92 ? -0.04 : 0), 0.3, 0.66);
+
+    const enhancementCanvas = document.createElement("canvas");
+    enhancementCanvas.width = width;
+    enhancementCanvas.height = height;
+    const enhancementCtx = enhancementCanvas.getContext("2d");
+    if (enhancementCtx) {
+      enhancementCtx.filter = `brightness(${brightness}) contrast(${contrast}) saturate(${saturation})`;
+      enhancementCtx.drawImage(canvas, 0, 0);
+    }
+
+    const optimizedImage = (enhancementCtx ? enhancementCanvas : canvas).toDataURL("image/jpeg", 0.9);
+
+    return {
+      optimizedImage,
+      derived: {
+        brightness,
+        contrast,
+        saturation,
+        overlayOpacity,
+        blurPx: 0.5
+      }
+    };
+  }, []);
+
+  const handleShelfImageUpload = useCallback(
+    async (shelfKey: string, file: File | null) => {
+      if (!file) return;
+      if (!file.type.startsWith("image/")) return;
+      setIsOptimizingImage(true);
+      try {
+        const { optimizedImage, derived } = await processUploadedImage(file);
+        updateShelfCustomization(shelfKey, {
+          bgImage: optimizedImage,
+          brightness: derived.brightness,
+          contrast: derived.contrast,
+          saturation: derived.saturation,
+          overlayOpacity: derived.overlayOpacity,
+          blurPx: derived.blurPx,
+          zoom: 110,
+          positionY: 50
+        });
+      } finally {
+        setIsOptimizingImage(false);
+      }
+    },
+    [processUploadedImage, updateShelfCustomization]
+  );
 
   const genres = useMemo(() => {
     const values = new Set(catalog.map((item) => item.genre).filter(Boolean));
@@ -215,14 +398,12 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
       grouped[shelfKey] = items;
     });
 
-    const shelves: CatalogShelf[] = [
-      { key: "horror", label: "Horror Rack", kicker: "Night Shelf", accent: "var(--neon-pink)", icon: Flame, items: grouped.horror },
-      { key: "sci-fi", label: "Sci-Fi Console", kicker: "Future Shelf", accent: "var(--neon-cyan)", icon: Sparkles, items: grouped["sci-fi"] },
-      { key: "action", label: "Action Wall", kicker: "Impact Shelf", accent: "var(--brand)", icon: Play, items: grouped.action },
-      { key: "anime-fantasy", label: "Anime / Fantasy", kicker: "Illustrated Shelf", accent: "var(--neon-purple)", icon: Film, items: grouped["anime-fantasy"] },
-      { key: "drama", label: "Drama / Mystery", kicker: "Story Shelf", accent: "var(--brand-strong)", icon: Clock3, items: grouped.drama },
-      { key: "cult", label: "Cult Corner", kicker: "Wild Shelf", accent: "#cbd5e1", icon: Dice5, items: grouped.cult }
-    ];
+    const shelves: CatalogShelf[] = SHELF_BLUEPRINTS.map((shelf) => ({
+      ...shelf,
+      label: shelfCustomization[shelf.key]?.label?.trim() || shelf.label,
+      kicker: shelfCustomization[shelf.key]?.kicker?.trim() || shelf.kicker,
+      items: grouped[shelf.key] ?? []
+    }));
 
     return shelves
       .map((shelf) => ({
@@ -230,7 +411,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
         items: shelf.items
       }))
       .filter((shelf) => shelf.items.length > 0);
-  }, [filteredCatalog, dragLayout]);
+  }, [filteredCatalog, dragLayout, shelfCustomization]);
 
   const moveCatalogItem = useCallback(
     (itemId: string, toShelfKey: string, targetIndex: number) => {
@@ -694,10 +875,140 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                     <span className="hidden sm:inline">Reset</span>
                   </button>
                 )}
+                <button
+                  onClick={() => setIsCustomizeOpen((prev) => !prev)}
+                  className={`transition-all rounded-full px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 ${
+                    isCustomizeOpen
+                      ? "bg-[var(--neon-cyan)]/35 border border-[var(--neon-cyan)] text-[var(--neon-cyan)] shadow-[0_0_12px_rgba(34,211,238,0.35)]"
+                      : "border border-white/10 text-zinc-400 hover:border-white/25 hover:text-white"
+                  }`}
+                  title={isCustomizeOpen ? "Section-Editor schließen" : "Section-Editor öffnen"}
+                >
+                  <WandSparkles className="h-3 w-3" />
+                  <span className="hidden sm:inline">Customize</span>
+                </button>
               </div>
             </div>
           </CardHeader>
           <CardContent>
+            {isCustomizeOpen && (
+              <div className="mb-5 rounded-2xl border border-cyan-300/20 bg-cyan-500/[0.07] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.14em] text-cyan-200/85">Section Designer</p>
+                    <p className="text-sm text-zinc-300">Titel, Untertitel und Hintergrund pro Katalog-Shelf anpassen.</p>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {SHELF_BLUEPRINTS.map((shelf) => (
+                      <button
+                        key={shelf.key}
+                        onClick={() => setActiveCustomizeShelf(shelf.key)}
+                        className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
+                          activeCustomizeShelf === shelf.key
+                            ? "border-cyan-300/60 bg-cyan-300/15 text-cyan-200"
+                            : "border-white/15 text-zinc-300 hover:border-white/30"
+                        }`}
+                      >
+                        {shelf.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Überschrift</label>
+                      <input
+                        value={shelfCustomization[activeCustomizeShelf]?.label ?? ""}
+                        onChange={(event) => updateShelfCustomization(activeCustomizeShelf, { label: event.target.value })}
+                        placeholder="z.B. Neon Horror Vault"
+                        className="h-9 w-full rounded-lg border border-white/15 bg-black/25 px-3 text-sm text-zinc-100 outline-none focus:border-cyan-300/55"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Kicker</label>
+                      <input
+                        value={shelfCustomization[activeCustomizeShelf]?.kicker ?? ""}
+                        onChange={(event) => updateShelfCustomization(activeCustomizeShelf, { kicker: event.target.value })}
+                        placeholder="z.B. Curated by Mood"
+                        className="h-9 w-full rounded-lg border border-white/15 bg-black/25 px-3 text-sm text-zinc-100 outline-none focus:border-cyan-300/55"
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => uploadInputRef.current?.click()}
+                        className="h-8"
+                        disabled={isOptimizingImage}
+                      >
+                        <ImagePlus className="mr-1 h-3.5 w-3.5" />
+                        {isOptimizingImage ? "Optimiert..." : "Background hochladen"}
+                      </Button>
+                      {Boolean(shelfCustomization[activeCustomizeShelf]?.bgImage) && (
+                        <button
+                          type="button"
+                          onClick={() => updateShelfCustomization(activeCustomizeShelf, { bgImage: undefined })}
+                          className="inline-flex h-8 items-center gap-1 rounded-md border border-white/15 px-2 text-xs text-zinc-300 hover:border-white/30 hover:text-white"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                          Bild entfernen
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => resetShelfCustomization(activeCustomizeShelf)}
+                        className="inline-flex h-8 items-center gap-1 rounded-md border border-white/15 px-2 text-xs text-zinc-300 hover:border-white/30 hover:text-white"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Shelf reset
+                      </button>
+                    </div>
+                    <input
+                      ref={uploadInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
+                        void handleShelfImageUpload(activeCustomizeShelf, file);
+                        event.currentTarget.value = "";
+                      }}
+                    />
+                  </div>
+
+                  <div className="grid gap-2 rounded-xl border border-white/10 bg-black/20 p-3">
+                    {[
+                      { key: "overlayOpacity", label: "Overlay", min: 0.2, max: 0.8, step: 0.01, fallback: 0.48 },
+                      { key: "brightness", label: "Helligkeit", min: 0.8, max: 1.3, step: 0.01, fallback: 1.02 },
+                      { key: "contrast", label: "Kontrast", min: 0.9, max: 1.3, step: 0.01, fallback: 1.08 },
+                      { key: "saturation", label: "Sättigung", min: 0.85, max: 1.3, step: 0.01, fallback: 1.06 },
+                      { key: "blurPx", label: "Blur", min: 0, max: 8, step: 0.1, fallback: 0.5 },
+                      { key: "zoom", label: "Zoom", min: 100, max: 128, step: 1, fallback: 110 },
+                      { key: "positionY", label: "Fokus Y", min: 0, max: 100, step: 1, fallback: 50 }
+                    ].map((row) => {
+                      const val = Number((shelfCustomization[activeCustomizeShelf] as Record<string, unknown> | undefined)?.[row.key] ?? row.fallback);
+                      return (
+                        <label key={row.key} className="grid grid-cols-[88px_1fr_48px] items-center gap-2 text-xs text-zinc-300">
+                          <span>{row.label}</span>
+                          <input
+                            type="range"
+                            min={row.min}
+                            max={row.max}
+                            step={row.step}
+                            value={val}
+                            onChange={(event) => updateShelfCustomization(activeCustomizeShelf, { [row.key]: Number(event.target.value) })}
+                          />
+                          <span className="text-right tabular-nums text-zinc-400">{val.toFixed(row.step >= 1 ? 0 : 2)}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="mb-5 grid gap-3 sm:grid-cols-3">
               {communityPulse.map((entry) => (
                 <div
@@ -713,16 +1024,51 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
             <div className="catalog-regal space-y-8">
               {catalogShelves.map((shelf, shelfIndex) => {
                 const ShelfIcon = shelf.icon;
+                const custom = shelfCustomization[shelf.key] ?? {};
+                const hasCustomBg = Boolean(custom.bgImage);
+                const overlayOpacity = custom.overlayOpacity ?? 0.48;
+                const brightness = custom.brightness ?? 1.02;
+                const contrast = custom.contrast ?? 1.08;
+                const saturation = custom.saturation ?? 1.06;
+                const blurPx = custom.blurPx ?? 0.5;
+                const zoom = custom.zoom ?? 110;
+                const positionY = custom.positionY ?? 50;
                 return (
                   <motion.section
                     key={shelf.key}
-                    className="catalog-shelf-shell"
+                    className="catalog-shelf-shell relative overflow-hidden"
                     initial={{ opacity: 0, y: 18 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: "-80px" }}
                     transition={{ duration: 0.45, delay: shelfIndex * 0.06, ease: [0.23, 1, 0.32, 1] }}
                   >
-                    <div className="catalog-shelf-header">
+                    {hasCustomBg && (
+                      <>
+                        <div className="pointer-events-none absolute inset-0 z-0">
+                          <img
+                            src={custom.bgImage}
+                            alt=""
+                            className="h-full w-full object-cover"
+                            style={{
+                              objectPosition: `50% ${positionY}%`,
+                              transform: `scale(${zoom / 100})`,
+                              filter: `brightness(${brightness}) contrast(${contrast}) saturate(${saturation}) blur(${blurPx}px)`
+                            }}
+                            loading="lazy"
+                            decoding="async"
+                            aria-hidden
+                          />
+                        </div>
+                        <div
+                          className="pointer-events-none absolute inset-0 z-[1]"
+                          style={{
+                            background: `linear-gradient(180deg, rgba(3,8,18,${clamp(overlayOpacity * 0.75, 0.2, 0.78)}) 0%, rgba(3,8,18,${overlayOpacity}) 48%, rgba(3,8,18,${clamp(overlayOpacity + 0.16, 0.34, 0.9)}) 100%)`
+                          }}
+                        />
+                      </>
+                    )}
+
+                    <div className="catalog-shelf-header relative z-10">
                       <div>
                         <p className="catalog-shelf-kicker">{shelf.kicker}</p>
                         <h3 className="catalog-shelf-title">{shelf.label}</h3>
@@ -734,7 +1080,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                     </div>
 
                     <div
-                      className={`catalog-shelf-rail transition-all ${
+                      className={`catalog-shelf-rail relative z-10 transition-all ${
                         isDragMode && dragOverShelfKey === shelf.key ? "ring-1 ring-[var(--neon-purple)]/50 ring-offset-0" : ""
                       }`}
                       onDragOver={(event) => {
