@@ -778,7 +778,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                           transition={{ duration: 0.35, delay: itemIndex * 0.025, ease: [0.23, 1, 0.32, 1] }}
                           whileHover={{ y: -6, scale: isDragMode ? 1 : 1.02 }}
                           draggable={isDragMode}
-                          onDragStart={(event) => {
+                          onDragStartCapture={(event) => {
                             if (!isDragMode) return;
                             event.dataTransfer.effectAllowed = "move";
                             event.dataTransfer.setData("text/plain", item.id);
@@ -801,7 +801,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                             setDragOverShelfKey(null);
                             setDragOverItemId(null);
                           }}
-                          onDragEnd={() => {
+                          onDragEndCapture={() => {
                             setDraggingItemId(null);
                             setDragOverShelfKey(null);
                             setDragOverItemId(null);
