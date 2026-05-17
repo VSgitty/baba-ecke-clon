@@ -13,6 +13,7 @@ export function HeroSection() {
   });
 
   const parallaxYBack  = useTransform(scrollYProgress, [0, 1], ["0%", "28%"]);
+  const parallaxYFront = useTransform(scrollYProgress, [0, 1], ["0%", "16%"]);
   const fogOpacity     = useTransform(scrollYProgress, [0, 1], [0.5, 0.94]);
   const titleY         = useTransform(scrollYProgress, [0, 1], ["0%", "22%"]);
   const titleOpacity   = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
@@ -37,7 +38,22 @@ export function HeroSection() {
         />
       </motion.div>
 
-      {/* Layer 2 — cinematic fog */}
+      {/* Layer 2 — soft foreground blur overlay */}
+      <motion.div
+        className="hero-parallax-front absolute inset-0 z-[1] scale-110"
+        style={{ y: parallaxYFront }}
+      >
+        <Image
+          src="/c/lost-wallpaper.png"
+          alt="LOST Wallpaper Overlay"
+          fill
+          priority
+          className="object-cover"
+          sizes="100vw"
+        />
+      </motion.div>
+
+      {/* Layer 3 — cinematic fog */}
       <motion.div className="hero-parallax-fog absolute inset-0 z-[2]" style={{ opacity: fogOpacity }} />
 
       {/* Layer 4 — ambient light leaks */}
