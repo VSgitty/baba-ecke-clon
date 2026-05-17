@@ -35,7 +35,7 @@ const MobileAtmosphere3D = dynamic(
 export function MobileCinematicLanding({ collections }: { collections: MobileCollection[] }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [introDone, setIntroDone] = useState(false);
-  const [mobileViewport, setMobileViewport] = useState<boolean | null>(null);
+  const [mobileViewport, setMobileViewport] = useState(true);
   const [reducedEffects, setReducedEffects] = useState(false);
 
   const introRef = useRef<HTMLDivElement>(null);
@@ -65,7 +65,15 @@ export function MobileCinematicLanding({ collections }: { collections: MobileCol
   }, []);
 
   useEffect(() => {
-    if (!introRef.current || !logoRef.current) return;
+    const hardStopTimer = window.setTimeout(() => {
+      setIntroDone(true);
+    }, 2400);
+
+    if (!introRef.current || !logoRef.current) {
+      return () => {
+        window.clearTimeout(hardStopTimer);
+      };
+    }
 
     const timeline = gsap.timeline({
       defaults: { ease: "power3.out" },
@@ -99,6 +107,7 @@ export function MobileCinematicLanding({ collections }: { collections: MobileCol
       .set(introRef.current, { pointerEvents: "none" });
 
     return () => {
+      window.clearTimeout(hardStopTimer);
       timeline.kill();
     };
   }, []);
@@ -125,10 +134,6 @@ export function MobileCinematicLanding({ collections }: { collections: MobileCol
       document.body.style.overflow = "";
     };
   }, [menuOpen]);
-
-  if (mobileViewport === null) {
-    return <div className="min-h-screen bg-black" />;
-  }
 
   if (!mobileViewport) {
     return (

@@ -8,6 +8,8 @@
 
 .introLayer {
   background: radial-gradient(circle at 50% 30%, rgba(0, 255, 208, 0.18), rgba(0, 0, 0, 0.94) 52%), #000;
+  pointer-events: none;
+  animation: introAutoHide 2.4s ease forwards;
 }
 
 .introNoise {
@@ -289,5 +291,18 @@
   }
   100% {
     transform: translateY(0px);
+  }
+}
+
+@keyframes introAutoHide {
+  0% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
   }
 }
