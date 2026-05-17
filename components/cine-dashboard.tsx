@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Clock3, Dice5, ExternalLink, Film, Filter, Flame, Play, Sparkles, Star } from "lucide-react";
+import { Clock3, Dice5, ExternalLink, Film, Filter, Flame, GripVertical, Play, Sparkles, Star, RotateCcw } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import type { CatalogItem } from "@/lib/catalog";
@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 const WATCHLIST_KEY = "baba_watchlist_v3";
 const FRANCHISE_KEY = "baba_franchise_v3";
+const DRAG_LAYOUT_KEY = "baba_drag_layout_v1";
 
 type FranchiseState = Record<string, Record<string, boolean>>;
 
@@ -72,15 +73,21 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
   const [typeFilter, setTypeFilter] = useState<"all" | "movie" | "series">("all");
   const [genreFilter, setGenreFilter] = useState<string>("all");
   const [roulettePick, setRoulettePick] = useState<CatalogItem | null>(null);
+  const [isDragMode, setIsDragMode] = useState(false);
+  const [dragLayout, setDragLayout] = useState<Record<string, { shelf: string; order: number }>>({});
 
   type InfoPos = { left: number; top: number; showLeft: boolean };
   const [hoveredItem, setHoveredItem] = useState<CatalogItem | null>(null);
   const [infoPos, setInfoPos] = useState<InfoPos | null>(null);
+  const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
+  const [dragOverShelfKey, setDragOverShelfKey] = useState<string | null>(null);
+  const [dragOverItemId, setDragOverItemId] = useState<string | null>(null);
 
 
   useEffect(() => {
     const rawWatchlist = window.localStorage.getItem(WATCHLIST_KEY);
     const rawFranchise = window.localStorage.getItem(FRANCHISE_KEY);
+    const rawDragLayout = window.localStorage.getItem(DRAG_LAYOUT_KEY);
 
     if (rawWatchlist) {
       try {
@@ -98,6 +105,14 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
         }));
       } catch {
         setFranchiseState(buildInitialFranchiseState());
+      }
+    }
+
+    if (rawDragLayout) {
+      try {
+        setDragLayout(JSON.parse(rawDragLayout) as Record<string, { shelf: string; order: number }>);
+      } catch {
+        setDragLayout({});
       }
     }
   }, []);
@@ -183,8 +198,21 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
     };
 
     filteredCatalog.forEach((item) => {
-      const shelfKey = classifyCatalogItem(item);
+      const shelfKey = dragLayout[item.id]?.shelf ?? classifyCatalogItem(item);
       grouped[shelfKey].push(item);
+    });
+
+    Object.entries(grouped).forEach(([shelfKey, items]) => {
+      items.sort((a, b) => {
+        const orderA = dragLayout[a.id]?.order ?? Number.MAX_SAFE_INTEGER;
+        const orderB = dragLayout[b.id]?.order ?? Number.MAX_SAFE_INTEGER;
+        if (orderA === orderB) return a.title.localeCompare(b.title);
+        return orderA - orderB;
+      });
+      if (items.every((item) => dragLayout[item.id]?.order === undefined)) {
+        items.sort((a, b) => a.title.localeCompare(b.title));
+      }
+      grouped[shelfKey] = items;
     });
 
     const shelves: CatalogShelf[] = [
@@ -202,7 +230,75 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
         items: shelf.items
       }))
       .filter((shelf) => shelf.items.length > 0);
-  }, [filteredCatalog]);
+  }, [filteredCatalog, dragLayout]);
+
+  const moveCatalogItem = useCallback(
+    (itemId: string, toShelfKey: string, targetIndex: number) => {
+      setDragLayout((prev) => {
+        const next = { ...prev };
+        const byShelf: Record<string, CatalogItem[]> = {
+          horror: [],
+          "sci-fi": [],
+          action: [],
+          "anime-fantasy": [],
+          drama: [],
+          cult: []
+        };
+
+        for (const item of filteredCatalog) {
+          const shelfKey = next[item.id]?.shelf ?? classifyCatalogItem(item);
+          if (!byShelf[shelfKey]) byShelf[shelfKey] = [];
+          byShelf[shelfKey].push(item);
+        }
+
+        for (const [shelfKey, list] of Object.entries(byShelf)) {
+          list.sort((a, b) => {
+            const orderA = next[a.id]?.order ?? Number.MAX_SAFE_INTEGER;
+            const orderB = next[b.id]?.order ?? Number.MAX_SAFE_INTEGER;
+            return orderA - orderB;
+          });
+          if (list.every((item) => next[item.id]?.order === undefined)) {
+            list.sort((a, b) => a.title.localeCompare(b.title));
+          }
+          byShelf[shelfKey] = list;
+        }
+
+        const draggedItem = filteredCatalog.find((item) => item.id === itemId);
+        if (!draggedItem) return prev;
+
+        const fromShelfKey = next[itemId]?.shelf ?? classifyCatalogItem(draggedItem);
+        const fromList = (byShelf[fromShelfKey] ?? []).filter((item) => item.id !== itemId);
+        const toListBase = fromShelfKey === toShelfKey ? fromList : [...(byShelf[toShelfKey] ?? [])];
+
+        const clampedIndex = Math.max(0, Math.min(targetIndex, toListBase.length));
+        const toList = [...toListBase];
+        toList.splice(clampedIndex, 0, draggedItem);
+
+        const writeOrders = (shelfKey: string, items: CatalogItem[]) => {
+          items.forEach((item, index) => {
+            next[item.id] = { shelf: shelfKey, order: index };
+          });
+        };
+
+        if (fromShelfKey === toShelfKey) {
+          writeOrders(toShelfKey, toList);
+        } else {
+          writeOrders(fromShelfKey, fromList);
+          writeOrders(toShelfKey, toList);
+        }
+
+        window.localStorage.setItem(DRAG_LAYOUT_KEY, JSON.stringify(next));
+        return next;
+      });
+    },
+    [filteredCatalog]
+  );
+
+  const resetDragOrder = useCallback(() => {
+    setDragLayout({});
+    setIsDragMode(false);
+    window.localStorage.removeItem(DRAG_LAYOUT_KEY);
+  }, []);
 
   const franchiseSlugByTitle = useMemo(
     () => Object.fromEntries(franchises.map((franchise) => [franchise.title, franchise.slug])) as Record<string, string>,
@@ -269,15 +365,17 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
   }, [hoveredItem?.id]);
 
   const handleCardClick = useCallback((item: CatalogItem, event: React.MouseEvent<HTMLElement>) => {
+    if (isDragMode) return;
     openInfoCard(item, event.currentTarget);
-  }, [openInfoCard]);
+  }, [openInfoCard, isDragMode]);
 
   const handleCardKeyDown = useCallback((item: CatalogItem, event: React.KeyboardEvent<HTMLElement>) => {
+    if (isDragMode) return;
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       openInfoCard(item, event.currentTarget);
     }
-  }, [openInfoCard]);
+  }, [openInfoCard, isDragMode]);
 
   function handleCoverMove(event: React.MouseEvent<HTMLElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -574,6 +672,28 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                     ))}
                   </select>
                 </div>
+                <button
+                  onClick={() => setIsDragMode(!isDragMode)}
+                  className={`transition-all rounded-full px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 ${
+                    isDragMode
+                      ? "bg-[var(--neon-purple)]/40 border border-[var(--neon-purple)] text-[var(--neon-purple)] shadow-[0_0_12px_rgba(168,85,247,0.3)]"
+                      : "border border-white/10 text-zinc-400 hover:border-white/25 hover:text-white"
+                  }`}
+                  title={isDragMode ? "Drag-Mode aktiviert" : "Drag-Mode deaktiviert"}
+                >
+                  <GripVertical className="h-3 w-3" />
+                  <span className="hidden sm:inline">Drag</span>
+                </button>
+                {isDragMode && (
+                  <button
+                    onClick={resetDragOrder}
+                    className="transition-all rounded-full px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 border border-white/10 text-zinc-400 hover:border-white/25 hover:text-white"
+                    title="Ordnung zurücksetzen"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    <span className="hidden sm:inline">Reset</span>
+                  </button>
+                )}
               </div>
             </div>
           </CardHeader>
@@ -613,11 +733,38 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                       </div>
                     </div>
 
-                    <div className="catalog-shelf-rail">
+                    <div
+                      className={`catalog-shelf-rail transition-all ${
+                        isDragMode && dragOverShelfKey === shelf.key ? "ring-1 ring-[var(--neon-purple)]/50 ring-offset-0" : ""
+                      }`}
+                      onDragOver={(event) => {
+                        if (!isDragMode) return;
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = "move";
+                        setDragOverShelfKey(shelf.key);
+                        setDragOverItemId(null);
+                      }}
+                      onDragLeave={() => {
+                        if (!isDragMode) return;
+                        setDragOverShelfKey(null);
+                      }}
+                      onDrop={(event) => {
+                        if (!isDragMode) return;
+                        event.preventDefault();
+                        const incomingId = draggingItemId || event.dataTransfer.getData("text/plain");
+                        if (!incomingId) return;
+                        moveCatalogItem(incomingId, shelf.key, shelf.items.length);
+                        setDraggingItemId(null);
+                        setDragOverShelfKey(null);
+                        setDragOverItemId(null);
+                      }}
+                    >
                       {shelf.items.map((item, itemIndex) => (
                         <motion.article
                           key={item.id}
-                          className="cover-card catalog-shelf-card cursor-pointer p-0"
+                          className={`cover-card catalog-shelf-card cursor-pointer p-0 transition-all ${
+                            isDragMode && dragOverItemId === item.id ? "ring-2 ring-[var(--brand)]/60" : ""
+                          }`}
                           onMouseMove={handleCoverMove}
                           onClick={(e) => handleCardClick(item, e)}
                           onMouseLeave={resetCoverMove}
@@ -629,7 +776,40 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                           whileInView={{ opacity: 1, y: 0 }}
                           viewport={{ once: true, margin: "-40px" }}
                           transition={{ duration: 0.35, delay: itemIndex * 0.025, ease: [0.23, 1, 0.32, 1] }}
-                          whileHover={{ y: -6, scale: 1.02 }}
+                          whileHover={{ y: -6, scale: isDragMode ? 1 : 1.02 }}
+                          draggable={isDragMode}
+                          onDragStart={(event) => {
+                            if (!isDragMode) return;
+                            event.dataTransfer.effectAllowed = "move";
+                            event.dataTransfer.setData("text/plain", item.id);
+                            setDraggingItemId(item.id);
+                          }}
+                          onDragOver={(event) => {
+                            if (!isDragMode) return;
+                            event.preventDefault();
+                            event.dataTransfer.dropEffect = "move";
+                            setDragOverShelfKey(shelf.key);
+                            setDragOverItemId(item.id);
+                          }}
+                          onDrop={(event) => {
+                            if (!isDragMode) return;
+                            event.preventDefault();
+                            const incomingId = draggingItemId || event.dataTransfer.getData("text/plain");
+                            if (!incomingId) return;
+                            moveCatalogItem(incomingId, shelf.key, itemIndex);
+                            setDraggingItemId(null);
+                            setDragOverShelfKey(null);
+                            setDragOverItemId(null);
+                          }}
+                          onDragEnd={() => {
+                            setDraggingItemId(null);
+                            setDragOverShelfKey(null);
+                            setDragOverItemId(null);
+                          }}
+                          style={{
+                            cursor: isDragMode ? "grab" : "pointer",
+                            opacity: draggingItemId === item.id && isDragMode ? 0.65 : 1
+                          }}
                         >
                           <div className="cover-tilt relative aspect-[2/3] w-full bg-zinc-950">
                             {item.poster ? (
@@ -647,6 +827,12 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
                             )}
                             <div className="cover-spine" aria-hidden />
                             <div className="cover-shine" aria-hidden />
+
+                            {isDragMode && (
+                              <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/30 opacity-100 transition-opacity">
+                                <GripVertical className="h-6 w-6 text-white/60" />
+                              </div>
+                            )}
 
                             <div
                               className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
