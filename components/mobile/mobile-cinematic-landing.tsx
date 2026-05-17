@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
@@ -55,10 +56,12 @@ export function MobileCinematicLanding({ categories, franchises }: MobileCinemat
   const [mobileViewport, setMobileViewport] = useState(true);
   const [reducedEffects, setReducedEffects] = useState(false);
   const [activeTypeFilter, setActiveTypeFilter] = useState<"all" | "Film" | "Serie">("all");
+  const [isFilterAnimating, setIsFilterAnimating] = useState(false);
 
   const introRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLHeadingElement>(null);
   const ctaRef = useRef<HTMLAnchorElement>(null);
+  const categoryStackRef = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll();
   const heroShift = useTransform(scrollYProgress, [0, 0.35], [0, -120]);
@@ -160,6 +163,68 @@ export function MobileCinematicLanding({ categories, franchises }: MobileCinemat
       document.body.style.overflow = "";
     };
   }, [menuOpen]);
+
+  useEffect(() => {
+    if (!categoryStackRef.current) return;
+
+    const cards = categoryStackRef.current.querySelectorAll("[data-cover-card='true']");
+    const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+
+    setIsFilterAnimating(true);
+    tl.fromTo(
+      cards,
+      { opacity: 0.82, y: 6, scale: 0.985, filter: "saturate(0.8)" },
+      { opacity: 1, y: 0, scale: 1, filter: "saturate(1)", duration: 0.26, stagger: 0.012 }
+    );
+
+    const timeout = window.setTimeout(() => setIsFilterAnimating(false), 210);
+
+    return () => {
+      tl.kill();
+      window.clearTimeout(timeout);
+    };
+  }, [activeTypeFilter]);
+
+  const updateCardTilt = (element: HTMLElement, clientX: number, clientY: number) => {
+    const rect = element.getBoundingClientRect();
+    const relativeX = (clientX - rect.left) / rect.width;
+    const relativeY = (clientY - rect.top) / rect.height;
+
+    const rotateY = (relativeX - 0.5) * 14;
+    const rotateX = (0.5 - relativeY) * 14;
+
+    element.style.setProperty("--tilt-rotate-x", `${rotateX.toFixed(2)}deg`);
+    element.style.setProperty("--tilt-rotate-y", `${rotateY.toFixed(2)}deg`);
+    element.style.setProperty("--tilt-glare-x", `${(relativeX * 100).toFixed(1)}%`);
+    element.style.setProperty("--tilt-glare-y", `${(relativeY * 100).toFixed(1)}%`);
+    element.classList.add(styles.tiltActive);
+  };
+
+  const resetCardTilt = (element: HTMLElement) => {
+    element.style.setProperty("--tilt-rotate-x", "0deg");
+    element.style.setProperty("--tilt-rotate-y", "0deg");
+    element.style.setProperty("--tilt-glare-x", "50%");
+    element.style.setProperty("--tilt-glare-y", "50%");
+    element.classList.remove(styles.tiltActive);
+  };
+
+  const handleCoverPointerMove = (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+    updateCardTilt(event.currentTarget, event.clientX, event.clientY);
+  };
+
+  const handleCoverPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    updateCardTilt(event.currentTarget, event.clientX, event.clientY);
+  };
+
+  const handleCoverPointerEnd = (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    resetCardTilt(event.currentTarget);
+  };
 
   if (!mobileViewport) {
     return (
@@ -292,7 +357,7 @@ export function MobileCinematicLanding({ categories, franchises }: MobileCinemat
           <span className={styles.sectionLink}>Alle ansehen</span>
         </div>
 
-        <div className={styles.filterRow}>
+        <div className={`${styles.filterRow} ${isFilterAnimating ? styles.filterRowPulse : ""}`}>
           {(["all", "Film", "Serie"] as const).map((filter) => (
             <button
               key={filter}
@@ -305,7 +370,7 @@ export function MobileCinematicLanding({ categories, franchises }: MobileCinemat
           ))}
         </div>
 
-        <div className={styles.categoryStack}>
+        <div className={styles.categoryStack} ref={categoryStackRef}>
           {categories.map((category) => (
             <section key={category.id} className={styles.categorySection}>
               {(() => {
@@ -348,7 +413,16 @@ export function MobileCinematicLanding({ categories, franchises }: MobileCinemat
 
               <div className={styles.coversGrid}>
                 {visibleItems.slice(0, 8).map((item) => (
-                  <article key={`${category.id}-${item.id}`} className={styles.coverCard}>
+                  <article
+                    key={`${category.id}-${item.id}`}
+                    className={styles.coverCard}
+                    data-cover-card="true"
+                    onPointerDown={handleCoverPointerDown}
+                    onPointerMove={handleCoverPointerMove}
+                    onPointerUp={handleCoverPointerEnd}
+                    onPointerCancel={handleCoverPointerEnd}
+                    onPointerLeave={handleCoverPointerEnd}
+                  >
                     <img
                       src={item.poster}
                       alt={item.title}
