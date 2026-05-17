@@ -63,10 +63,10 @@ function toCatalogItem(id: string, item: RawCatalogEntry): CatalogItem {
   };
 }
 
-export function getCatalogItems(limit = 120): CatalogItem[] {
+export function getCatalogItems(limit?: number): CatalogItem[] {
   const entries = Object.entries(rawCatalog as Record<string, RawCatalogEntry>);
-
-  return entries.slice(0, limit).map(([id, item]) => toCatalogItem(id, item));
+  const actualLimit = limit ? Math.min(limit, entries.length) : entries.length;
+  return entries.slice(0, actualLimit).map(([id, item]) => toCatalogItem(id, item));
 }
 
 async function loadCustomCatalogItems(): Promise<CatalogItem[]> {
@@ -80,7 +80,7 @@ async function loadCustomCatalogItems(): Promise<CatalogItem[]> {
   }
 }
 
-export async function getCombinedCatalogItems(limit = 120): Promise<CatalogItem[]> {
+export async function getCombinedCatalogItems(limit?: number): Promise<CatalogItem[]> {
   const staticItems = getCatalogItems(limit);
   const customItems = await loadCustomCatalogItems();
 
@@ -97,7 +97,14 @@ export async function getCombinedCatalogItems(limit = 120): Promise<CatalogItem[
     }
   });
 
-  return Array.from(itemMap.values()).slice(0, limit);
+  const allItems = Array.from(itemMap.values());
+  
+  // Apply limit at the end - this ensures custom items are always included
+  if (limit && limit > 0) {
+    return allItems.slice(0, limit);
+  }
+  
+  return allItems;
 }
 
 /**

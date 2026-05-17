@@ -21,14 +21,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "title query parameter required" }, { status: 400 });
     }
 
-    const result = await resolveCatalogAutofill(title, type, year);
-    if (!result) {
-      return NextResponse.json({ error: "No TMDB match found" }, { status: 404 });
+    // Check if TMDB_API_KEY is configured
+    if (!process.env.TMDB_API_KEY) {
+      console.error("[GET /api/catalog/autofill] TMDB_API_KEY not configured");
+      return NextResponse.json(
+        { error: "TMDB API not configured - check .env.local for TMDB_API_KEY" },
+        { status: 503 }
+      );
     }
 
+    console.log(`[GET /api/catalog/autofill] Searching for: "${title}" (${type}, year: ${year || "any"})`);
+    const result = await resolveCatalogAutofill(title, type, year);
+    
+    if (!result) {
+      console.warn(`[GET /api/catalog/autofill] No TMDB match found for: "${title}"`);
+      return NextResponse.json({ error: `No match found for "${title}" on TMDB` }, { status: 404 });
+    }
+
+    console.log(`[GET /api/catalog/autofill] Success: found "${result.title}"`);
     return NextResponse.json({ item: result });
   } catch (error) {
     console.error("[GET /api/catalog/autofill] Error:", error);
-    return NextResponse.json({ error: "TMDB autofill failed" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "TMDB autofill failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

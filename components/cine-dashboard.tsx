@@ -10,6 +10,8 @@ import { franchises } from "@/data/content";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { loadCustomShelves, getIconComponent } from "@/lib/shelf-manager";
+import type { CustomShelf } from "@/lib/shelf-manager";
 
 const WATCHLIST_KEY = "baba_watchlist_v3";
 const FRANCHISE_KEY = "baba_franchise_v3";
@@ -107,6 +109,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
   const [activeCustomizeShelf, setActiveCustomizeShelf] = useState<string>(SHELF_BLUEPRINTS[0]?.key ?? "horror");
   const [shelfCustomization, setShelfCustomization] = useState<Record<string, ShelfCustomization>>({});
   const [isOptimizingImage, setIsOptimizingImage] = useState(false);
+  const [customShelves, setCustomShelves] = useState<CustomShelf[]>([]);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
 
   type InfoPos = { left: number; top: number; showLeft: boolean };
@@ -157,6 +160,13 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
         setShelfCustomization({});
       }
     }
+
+    // Load custom shelves
+    const loadShelves = async () => {
+      const shelves = await loadCustomShelves();
+      setCustomShelves(shelves);
+    };
+    loadShelves();
   }, []);
 
   const saveShelfCustomization = useCallback((next: Record<string, ShelfCustomization>) => {
@@ -371,18 +381,22 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
   }, [catalog]);
 
   const catalogShelves = useMemo<CatalogShelf[]>(() => {
-    const grouped: Record<string, CatalogItem[]> = {
-      horror: [],
-      "sci-fi": [],
-      action: [],
-      "anime-fantasy": [],
-      drama: [],
-      cult: []
-    };
+    // Get all shelf keys (default + custom)
+    const allShelfKeys = [
+      ...SHELF_BLUEPRINTS.map(s => s.key),
+      ...customShelves.map(s => s.key)
+    ];
+
+    const grouped: Record<string, CatalogItem[]> = {};
+    allShelfKeys.forEach(key => {
+      grouped[key] = [];
+    });
 
     filteredCatalog.forEach((item) => {
       const shelfKey = dragLayout[item.id]?.shelf ?? classifyCatalogItem(item);
-      grouped[shelfKey].push(item);
+      if (grouped[shelfKey]) {
+        grouped[shelfKey].push(item);
+      }
     });
 
     Object.entries(grouped).forEach(([shelfKey, items]) => {
@@ -398,12 +412,22 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
       grouped[shelfKey] = items;
     });
 
-    const shelves: CatalogShelf[] = SHELF_BLUEPRINTS.map((shelf) => ({
-      ...shelf,
-      label: shelfCustomization[shelf.key]?.label?.trim() || shelf.label,
-      kicker: shelfCustomization[shelf.key]?.kicker?.trim() || shelf.kicker,
-      items: grouped[shelf.key] ?? []
-    }));
+    // Build shelves from blueprints + custom shelves
+    const shelves: CatalogShelf[] = [
+      ...SHELF_BLUEPRINTS.map((shelf) => ({
+        ...shelf,
+        label: shelfCustomization[shelf.key]?.label?.trim() || shelf.label,
+        kicker: shelfCustomization[shelf.key]?.kicker?.trim() || shelf.kicker,
+        items: grouped[shelf.key] ?? []
+      })),
+      ...customShelves.map((customShelf) => ({
+        ...customShelf,
+        icon: getIconComponent(customShelf.icon),
+        label: shelfCustomization[customShelf.key]?.label?.trim() || customShelf.label,
+        kicker: shelfCustomization[customShelf.key]?.kicker?.trim() || customShelf.kicker,
+        items: grouped[customShelf.key] ?? []
+      }))
+    ];
 
     return shelves
       .map((shelf) => ({
@@ -411,20 +435,21 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
         items: shelf.items
       }))
       .filter((shelf) => shelf.items.length > 0);
-  }, [filteredCatalog, dragLayout, shelfCustomization]);
+  }, [filteredCatalog, dragLayout, shelfCustomization, customShelves]);
 
   const moveCatalogItem = useCallback(
     (itemId: string, toShelfKey: string, targetIndex: number) => {
       setDragLayout((prev) => {
         const next = { ...prev };
-        const byShelf: Record<string, CatalogItem[]> = {
-          horror: [],
-          "sci-fi": [],
-          action: [],
-          "anime-fantasy": [],
-          drama: [],
-          cult: []
-        };
+        const byShelf: Record<string, CatalogItem[]> = {};
+
+        // Initialize all shelf keys
+        SHELF_BLUEPRINTS.forEach(shelf => {
+          byShelf[shelf.key] = [];
+        });
+        customShelves.forEach(shelf => {
+          byShelf[shelf.key] = [];
+        });
 
         for (const item of filteredCatalog) {
           const shelfKey = next[item.id]?.shelf ?? classifyCatalogItem(item);
@@ -472,7 +497,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
         return next;
       });
     },
-    [filteredCatalog]
+    [filteredCatalog, customShelves]
   );
 
   const resetDragOrder = useCallback(() => {

@@ -43,7 +43,10 @@ export default function AdminCatalogPage() {
 
   const autofillFromTmdb = useCallback(async (applyToForm = true) => {
     const title = form.title.trim();
-    if (!title) return null;
+    if (!title) {
+      setAutofillMessage("");
+      return null;
+    }
 
     setIsAutofilling(true);
     setAutofillMessage("");
@@ -59,11 +62,20 @@ export default function AdminCatalogPage() {
         method: "GET"
       });
 
-      if (!response.ok) return null;
-
       const data = await response.json();
+
+      if (!response.ok) {
+        const errorMsg = data?.error || "TMDB Autofill fehlgeschlagen";
+        setAutofillMessage(`❌ TMDB Fehler: ${errorMsg}`);
+        console.error("[autofillFromTmdb] API error:", errorMsg);
+        return null;
+      }
+
       const tmdbItem = data?.item;
-      if (!tmdbItem) return null;
+      if (!tmdbItem) {
+        setAutofillMessage(`❌ Kein Film/Serie "${title}" auf TMDB gefunden`);
+        return null;
+      }
 
       if (applyToForm) {
         setForm((prev) => ({
@@ -77,7 +89,7 @@ export default function AdminCatalogPage() {
           cover: tmdbItem.poster || prev.cover,
           description: tmdbItem.description || prev.description
         }));
-        setAutofillMessage("TMDB-Daten automatisch uebernommen.");
+        setAutofillMessage(`✅ TMDB-Daten für "${tmdbItem.title}" automatisch übernommen.`);
       }
 
       return tmdbItem as {
@@ -90,7 +102,10 @@ export default function AdminCatalogPage() {
         poster?: string;
         description?: string;
       };
-    } catch {
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Unbekannter Fehler";
+      setAutofillMessage(`❌ Autofill Fehler: ${errorMsg}`);
+      console.error("[autofillFromTmdb] Exception:", error);
       return null;
     } finally {
       setIsAutofilling(false);
@@ -177,7 +192,15 @@ export default function AdminCatalogPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-2">🎬 Katalog Admin Panel</h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-4xl font-bold">🎬 Katalog Admin Panel</h1>
+          <a
+            href="/admin/shelves"
+            className="text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded transition"
+          >
+            📚 Kategorien verwalten
+          </a>
+        </div>
         <p className="text-slate-400 mb-8">Füge einen neuen Film oder eine Serie zum Cine-Katalog hinzu</p>
 
         {autofillMessage && (
