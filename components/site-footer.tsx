@@ -3,7 +3,7 @@ import Link from "next/link";
 export function SiteFooter() {
   return (
     <footer
-      className="mt-24 border-t py-12"
+      className="site-footer mt-24 border-t py-12"
       style={{
         borderColor: "rgba(245,176,52,0.1)",
         background: "linear-gradient(180deg, transparent, rgba(3,5,12,0.6))"
