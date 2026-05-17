@@ -278,8 +278,10 @@ export function MobileCinematicLanding({ collections }: { collections: MobileCol
 
       <section id="collections" className="relative pb-24">
         <div className="px-4">
-          <h3 className="font-display text-4xl">Franchise Collections</h3>
-          <p className="mt-2 text-sm text-zinc-300">Sieben Universen mit eigener Farbwelt, Lichtstimmung und Motion-Signatur.</p>
+          <h3 className={`${styles.collectionsHeading} font-display`}>Franchise Collections</h3>
+          <p className={`${styles.collectionsSubheading} mt-2 text-sm text-zinc-300`}>
+            Sieben Universen mit eigener Farbwelt, Lichtstimmung und Motion-Signatur.
+          </p>
         </div>
 
         <div className="mt-6 space-y-8">
@@ -287,12 +289,12 @@ export function MobileCinematicLanding({ collections }: { collections: MobileCol
             <section key={collection.id} className="relative">
               <div className="px-4">
                 <div className="flex items-baseline justify-between">
-                  <h4 className="font-display text-[2.05rem] leading-none" style={{ color: collection.accent }}>
+                  <h4 className={`${styles.collectionTitle} font-display leading-none`} style={{ color: collection.accent }}>
                     {collection.title}
                   </h4>
                   <span className="text-[10px] uppercase tracking-[0.28em] text-zinc-400">Swipe</span>
                 </div>
-                <p className="mt-2 text-xs text-zinc-400">{collection.subtitle}</p>
+                <p className={`${styles.collectionSubtitle} mt-2 text-xs text-zinc-400`}>{collection.subtitle}</p>
               </div>
 
               <div className={styles.cardScroller} style={{ boxShadow: `inset 0 0 120px -40px ${collection.glow}` }}>
@@ -306,11 +308,20 @@ export function MobileCinematicLanding({ collections }: { collections: MobileCol
                     className={styles.collectionCard}
                     style={{ borderColor: `${collection.accent}66` }}
                   >
-                    <img src={item.poster} alt={item.title} loading="lazy" className={styles.collectionPoster} />
+                    <img
+                      src={item.poster}
+                      alt={item.title}
+                      loading="lazy"
+                      decoding="async"
+                      className={styles.collectionPoster}
+                      onError={(event) => {
+                        event.currentTarget.src = "/c/header.jpg";
+                      }}
+                    />
                     <div className={styles.posterSheen} />
                     <div className={styles.collectionMeta}>
                       <p className="line-clamp-1 text-xs uppercase tracking-[0.2em] text-cyan-200">{item.type}</p>
-                      <h5 className="mt-1 line-clamp-2 font-display text-2xl leading-[0.9]">{item.title}</h5>
+                      <h5 className={`${styles.cardTitle} mt-1 line-clamp-2 font-display`}>{item.title}</h5>
                       <div className="mt-3 flex items-center justify-between text-xs text-zinc-300">
                         <span>{item.year || "N/A"}</span>
                         <span>{(item.rating || 0).toFixed(1)}/10</span>
