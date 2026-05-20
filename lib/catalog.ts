@@ -1,6 +1,7 @@
 import rawCatalog from "@/data/movies-data.json";
 import { readFile } from "fs/promises";
 import path from "path";
+import { unstable_noStore as noStore } from "next/cache";
 
 export type CatalogItem = {
   id: string;
@@ -66,10 +67,14 @@ function toCatalogItem(id: string, item: RawCatalogEntry): CatalogItem {
 export function getCatalogItems(limit?: number): CatalogItem[] {
   const entries = Object.entries(rawCatalog as Record<string, RawCatalogEntry>);
   const actualLimit = limit ? Math.min(limit, entries.length) : entries.length;
-  return entries.slice(0, actualLimit).map(([id, item]) => toCatalogItem(id, item));
+
+  // Prefer most recently added entries when a limit is set.
+  const limitedEntries = limit ? entries.slice(-actualLimit) : entries;
+  return limitedEntries.map(([id, item]) => toCatalogItem(id, item));
 }
 
 async function loadCustomCatalogItems(): Promise<CatalogItem[]> {
+  noStore();
   try {
     const filePath = path.join(process.cwd(), "public", "data", "catalog-custom.json");
     const data = await readFile(filePath, "utf-8");
@@ -81,6 +86,7 @@ async function loadCustomCatalogItems(): Promise<CatalogItem[]> {
 }
 
 export async function getCombinedCatalogItems(limit?: number): Promise<CatalogItem[]> {
+  noStore();
   const staticItems = getCatalogItems(limit);
   const customItems = await loadCustomCatalogItems();
 
@@ -113,6 +119,7 @@ export async function getCombinedCatalogItems(limit?: number): Promise<CatalogIt
  * Enrichment is batched (max `enrichLimit` items) and cached 24 h via Next.js fetch.
  */
 export async function getEnrichedCatalogItems(limit = 120, enrichLimit = limit): Promise<CatalogItem[]> {
+  noStore();
   const allItems = await getCombinedCatalogItems(limit);
 
   // Lazy import keeps server-only code tree-shaken from client bundles
