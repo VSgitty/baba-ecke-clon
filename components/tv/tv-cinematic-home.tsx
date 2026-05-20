@@ -28,6 +28,9 @@ export type TvShelf = {
   items: TvCoverItem[];
 };
 
+const INTRO_DURATION_MS = 3200;
+const IDLE_TIMEOUT_MS = 45000;
+
 type TvCinematicHomeProps = {
   heroItems: TvHeroItem[];
   shelves: TvShelf[];
@@ -62,12 +65,22 @@ function formatDate(date: Date): string {
   }).format(date);
 }
 
+function isSameFocusTarget(a: FocusTarget | null, b: FocusTarget): boolean {
+  return Boolean(a && a.zone === b.zone && a.rowIndex === b.rowIndex && a.itemIndex === b.itemIndex && a.heroIndex === b.heroIndex);
+}
+
 export function TvCinematicHome({ heroItems, shelves, backgroundItems }: TvCinematicHomeProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [now, setNow] = useState(() => new Date());
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
   const [isRemoteMode, setIsRemoteMode] = useState(false);
+  const [introVisible, setIntroVisible] = useState(true);
+  const [idleVisible, setIdleVisible] = useState(false);
+  const [audioReady, setAudioReady] = useState(false);
   const resumeAutoplayRef = useRef<number | null>(null);
+  const idleTimerRef = useRef<number | null>(null);
+  const introTimerRef = useRef<number | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   const safeHeroItems = heroItems.length ? heroItems : backgroundItems.map((item) => ({ ...item, description: "TV-Curation aktiv." }));
   const activeHero = safeHeroItems[activeIndex % Math.max(safeHeroItems.length, 1)];
@@ -125,6 +138,67 @@ export function TvCinematicHome({ heroItems, shelves, backgroundItems }: TvCinem
     return [lead, ...pool.filter((item) => item.id !== lead?.id)].slice(0, 18);
   }, [activeHero, backgroundItems, previewHero, safeHeroItems]);
 
+  const clearIdleTimer = () => {
+    if (idleTimerRef.current) {
+      window.clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
+    }
+  };
+
+  const scheduleIdleTimer = () => {
+    clearIdleTimer();
+    idleTimerRef.current = window.setTimeout(() => {
+      setIdleVisible(true);
+      setIsRemoteMode(false);
+      setFocusTarget(null);
+    }, IDLE_TIMEOUT_MS);
+  };
+
+  const ensureAudioReady = async () => {
+    if (typeof window === "undefined") return false;
+    const AudioContextCtor = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextCtor) return false;
+
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContextCtor();
+    }
+
+    try {
+      if (audioContextRef.current.state === "suspended") {
+        await audioContextRef.current.resume();
+      }
+      const running = audioContextRef.current.state === "running";
+      setAudioReady(running);
+      return running;
+    } catch {
+      return false;
+    }
+  };
+
+  const playFocusSound = async (tone: "move" | "select" = "move") => {
+    const ready = await ensureAudioReady();
+    if (!ready || !audioContextRef.current) return;
+
+    const context = audioContextRef.current;
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const start = context.currentTime;
+    const duration = tone === "select" ? 0.14 : 0.08;
+
+    oscillator.type = tone === "select" ? "triangle" : "sine";
+    oscillator.frequency.setValueAtTime(tone === "select" ? 520 : 360, start);
+    oscillator.frequency.exponentialRampToValueAtTime(tone === "select" ? 660 : 430, start + duration);
+
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(tone === "select" ? 0.035 : 0.02, start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(start + duration + 0.02);
+  };
+
   const pauseAutoplay = () => {
     setIsRemoteMode(true);
     if (resumeAutoplayRef.current) {
@@ -136,14 +210,37 @@ export function TvCinematicHome({ heroItems, shelves, backgroundItems }: TvCinem
     }, 18000);
   };
 
+  const registerActivity = (withAudio = false) => {
+    if (introVisible) setIntroVisible(false);
+    if (idleVisible) setIdleVisible(false);
+    if (withAudio) {
+      void ensureAudioReady();
+    }
+    scheduleIdleTimer();
+  };
+
+  const setFocusedPreview = (target: FocusTarget, commit = false) => {
+    pauseAutoplay();
+    if (!isSameFocusTarget(focusTarget, target)) {
+      setFocusTarget(target);
+      void playFocusSound(commit ? "select" : "move");
+    } else if (commit) {
+      void playFocusSound("select");
+    }
+
+    if (commit) {
+      setActiveIndex(target.heroIndex);
+    }
+  };
+
   useEffect(() => {
-    if (safeHeroItems.length < 2 || isRemoteMode) return;
+    if (safeHeroItems.length < 2 || isRemoteMode || introVisible || idleVisible) return;
     const timer = window.setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % safeHeroItems.length);
     }, 6500);
 
     return () => window.clearInterval(timer);
-  }, [isRemoteMode, safeHeroItems.length]);
+  }, [idleVisible, introVisible, isRemoteMode, safeHeroItems.length]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000 * 20);
@@ -151,10 +248,47 @@ export function TvCinematicHome({ heroItems, shelves, backgroundItems }: TvCinem
   }, []);
 
   useEffect(() => {
+    introTimerRef.current = window.setTimeout(() => {
+      setIntroVisible(false);
+      scheduleIdleTimer();
+    }, INTRO_DURATION_MS);
+
+    return () => {
+      if (introTimerRef.current) {
+        window.clearTimeout(introTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const handlePointerMove = () => {
+      if (!introVisible && !idleVisible) {
+        scheduleIdleTimer();
+      }
+    };
+
+    const handlePointerActivity = () => {
+      registerActivity(true);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    window.addEventListener("mousedown", handlePointerActivity);
+    window.addEventListener("touchstart", handlePointerActivity, { passive: true });
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("mousedown", handlePointerActivity);
+      window.removeEventListener("touchstart", handlePointerActivity);
+    };
+  }, [idleVisible, introVisible]);
+
+  useEffect(() => {
     return () => {
       if (resumeAutoplayRef.current) {
         window.clearTimeout(resumeAutoplayRef.current);
       }
+      clearIdleTimer();
+      void audioContextRef.current?.close();
     };
   }, []);
 
@@ -175,7 +309,11 @@ export function TvCinematicHome({ heroItems, shelves, backgroundItems }: TvCinem
         event.preventDefault();
       }
 
-      pauseAutoplay();
+      registerActivity(true);
+
+      if (introVisible || idleVisible) {
+        return;
+      }
 
       const current = focusTarget || navigableRows[0];
       if (!current) return;
@@ -184,13 +322,13 @@ export function TvCinematicHome({ heroItems, shelves, backgroundItems }: TvCinem
 
       if (event.key === "ArrowLeft") {
         const next = findTarget(current.zone, current.rowIndex, current.itemIndex - 1) || current;
-        setFocusTarget(next);
+        setFocusedPreview(next);
         return;
       }
 
       if (event.key === "ArrowRight") {
         const next = findTarget(current.zone, current.rowIndex, current.itemIndex + 1) || current;
-        setFocusTarget(next);
+        setFocusedPreview(next);
         return;
       }
 
@@ -198,7 +336,7 @@ export function TvCinematicHome({ heroItems, shelves, backgroundItems }: TvCinem
         const nextRowIndex = Math.min(maxShelfRow, current.rowIndex + 1);
         const nextZone = nextRowIndex === 0 ? "queue" : "shelf";
         const next = findTarget(nextZone, nextRowIndex, current.itemIndex) || findTarget(nextZone, nextRowIndex, 0) || current;
-        setFocusTarget(next);
+        setFocusedPreview(next);
         return;
       }
 
@@ -206,18 +344,18 @@ export function TvCinematicHome({ heroItems, shelves, backgroundItems }: TvCinem
         const nextRowIndex = Math.max(0, current.rowIndex - 1);
         const nextZone = nextRowIndex === 0 ? "queue" : "shelf";
         const next = findTarget(nextZone, nextRowIndex, current.itemIndex) || findTarget(nextZone, nextRowIndex, 0) || current;
-        setFocusTarget(next);
+        setFocusedPreview(next);
         return;
       }
 
       if (event.key === "Enter" || event.key === " ") {
-        setActiveIndex(current.heroIndex);
+        setFocusedPreview(current, true);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [focusTarget, navigableRows, shelves.length]);
+  }, [focusTarget, idleVisible, introVisible, navigableRows, shelves.length]);
 
   useEffect(() => {
     if (!focusTarget) return;
@@ -231,6 +369,40 @@ export function TvCinematicHome({ heroItems, shelves, backgroundItems }: TvCinem
 
   return (
     <div className={styles.tvWorld}>
+      <AnimatePresence>
+        {introVisible && (
+          <motion.div className={styles.modeOverlay} initial={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <div className={styles.modeNoise} />
+            <div className={styles.modePanel}>
+              <p className={styles.modeEyebrow}>Baba Ecke TV</p>
+              <h1 className={`${styles.modeTitle} font-display`}>CINEMA MODE</h1>
+              <p className={styles.modeCopy}>Cover-Loop, grosse Reihen und direkte Navigation fuer TV, Console und Lean-Back-Screens.</p>
+              <button type="button" className={styles.modeButton} onClick={() => registerActivity(true)}>
+                Starten
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {idleVisible && !introVisible && (
+          <motion.div className={styles.modeOverlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <div className={styles.modeNoise} />
+            <div className={`${styles.modePanel} ${styles.idlePanel}`}>
+              <p className={styles.modeEyebrow}>Idle Screensaver</p>
+              <h2 className={`${styles.modeTitle} font-display`}>{activeHero.title}</h2>
+              <p className={styles.modeCopy}>Druecke OK, Enter oder bewege den Zeiger, um direkt in die Navigation zurueckzukehren.</p>
+              <div className={styles.idleMetaRow}>
+                <span>{formatClock(now)}</span>
+                <span>{formatDate(now)}</span>
+                <span>{audioReady ? "Focus Audio bereit" : "Audio bei Interaktion"}</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className={styles.backgroundFrame}>
         <AnimatePresence mode="wait">
           <motion.img
@@ -249,10 +421,7 @@ export function TvCinematicHome({ heroItems, shelves, backgroundItems }: TvCinem
         </AnimatePresence>
 
         {coverRails.map((_, railIndex) => (
-          <div
-            key={`rail-${railIndex}`}
-            className={styles.coverRail}
-          >
+          <div key={`rail-${railIndex}`} className={styles.coverRail}>
             <div
               className={`${styles.coverRailTrack} ${railIndex % 2 === 1 ? styles.coverRailReverse : ""}`}
               style={{ animationDuration: `${52 + railIndex * 10}s` }}
@@ -299,7 +468,7 @@ export function TvCinematicHome({ heroItems, shelves, backgroundItems }: TvCinem
           <div className={styles.heroCopy}>
             <div className={styles.heroKickerRow}>
               <span className={styles.livePill}>TV STARTSEITE</span>
-              <span className={styles.genrePill}>{activeHero.genre}</span>
+              <span className={styles.genrePill}>{previewHero.genre}</span>
             </div>
 
             <AnimatePresence mode="wait">
@@ -350,29 +519,38 @@ export function TvCinematicHome({ heroItems, shelves, backgroundItems }: TvCinem
             <div className={styles.queuePanel}>
               <p className={styles.queueTitle}>Naechste Covers</p>
               <div className={styles.queueList}>
-                {nextQueue.map(({ item, index }) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={`${styles.queueItem} ${focusTarget?.zone === "queue" && focusTarget.rowIndex === 0 && focusTarget.itemIndex === index ? styles.focusedItem : ""}`}
-                    data-focus-key={`queue-0-${index}`}
-                    onClick={() => {
-                      pauseAutoplay();
-                      setFocusTarget({ zone: "queue", rowIndex: 0, itemIndex: index, heroIndex: (activeIndex + index + 1) % safeHeroItems.length });
-                      setActiveIndex((activeIndex + index + 1) % safeHeroItems.length);
-                    }}
-                    onFocus={() => {
-                      pauseAutoplay();
-                      setFocusTarget({ zone: "queue", rowIndex: 0, itemIndex: index, heroIndex: (activeIndex + index + 1) % safeHeroItems.length });
-                    }}
-                  >
-                    <img src={item.poster} alt={item.title} className={styles.queuePoster} />
-                    <div>
-                      <p className={styles.queueItemTitle}>{item.title}</p>
-                      <p className={styles.queueItemMeta}>{item.type} · {item.year || "Archiv"}</p>
-                    </div>
-                  </button>
-                ))}
+                {nextQueue.map(({ item, index }) => {
+                  const target: FocusTarget = {
+                    zone: "queue",
+                    rowIndex: 0,
+                    itemIndex: index,
+                    heroIndex: (activeIndex + index + 1) % safeHeroItems.length,
+                  };
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`${styles.queueItem} ${isSameFocusTarget(focusTarget, target) ? styles.focusedItem : ""}`}
+                      data-focus-key={`queue-0-${index}`}
+                      onClick={() => {
+                        registerActivity(true);
+                        setFocusedPreview(target, true);
+                      }}
+                      onFocus={() => {
+                        if (isSameFocusTarget(focusTarget, target)) return;
+                        registerActivity(true);
+                        setFocusedPreview(target);
+                      }}
+                    >
+                      <img src={item.poster} alt={item.title} className={styles.queuePoster} />
+                      <div>
+                        <p className={styles.queueItemTitle}>{item.title}</p>
+                        <p className={styles.queueItemMeta}>{item.type} · {item.year || "Archiv"}</p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -380,60 +558,70 @@ export function TvCinematicHome({ heroItems, shelves, backgroundItems }: TvCinem
       </section>
 
       <section className={styles.shelvesWrap}>
-        {shelves.map((shelf) => (
-          <section key={shelf.id} className={styles.shelfSection}>
-            <div className={styles.shelfHeader}>
-              <div>
-                <p className={styles.shelfEyebrow} style={{ color: shelf.accent }}>Kuratiert fuer TV</p>
-                <h2 className={`${styles.shelfTitle} font-display`}>{shelf.title}</h2>
-                <p className={styles.shelfSubtitle}>{shelf.subtitle}</p>
-              </div>
-              <div className={styles.shelfStats}>
-                <span>{shelf.items.length} Titel</span>
-              </div>
-            </div>
+        {shelves.map((shelf, shelfIndex) => {
+          const shelfRowIndex = shelfIndex + 1;
 
-            <div className={styles.posterRow}>
-              {shelf.items.slice(0, 10).map((item, itemIndex) => {
-                const heroIndex = safeHeroItems.findIndex((entry) => entry.id === item.id);
-                const isFocused = focusTarget?.zone === "shelf" && focusTarget.rowIndex === shelves.findIndex((entry) => entry.id === shelf.id) + 1 && focusTarget.itemIndex === itemIndex;
+          return (
+            <section key={shelf.id} className={styles.shelfSection}>
+              <div className={styles.shelfHeader}>
+                <div>
+                  <p className={styles.shelfEyebrow} style={{ color: shelf.accent }}>Kuratiert fuer TV</p>
+                  <h2 className={`${styles.shelfTitle} font-display`}>{shelf.title}</h2>
+                  <p className={styles.shelfSubtitle}>{shelf.subtitle}</p>
+                </div>
+                <div className={styles.shelfStats}>
+                  <span>{shelf.items.length} Titel</span>
+                </div>
+              </div>
 
-                return (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`${styles.posterCard} ${isFocused ? styles.focusedItem : ""}`}
-                  data-focus-key={`shelf-${shelves.findIndex((entry) => entry.id === shelf.id) + 1}-${itemIndex}`}
-                  onClick={() => {
-                    pauseAutoplay();
-                    if (heroIndex >= 0) setActiveIndex(heroIndex);
-                    setFocusTarget({ zone: "shelf", rowIndex: shelves.findIndex((entry) => entry.id === shelf.id) + 1, itemIndex, heroIndex: heroIndex >= 0 ? heroIndex : 0 });
-                  }}
-                  onFocus={() => {
-                    pauseAutoplay();
-                    setFocusTarget({ zone: "shelf", rowIndex: shelves.findIndex((entry) => entry.id === shelf.id) + 1, itemIndex, heroIndex: heroIndex >= 0 ? heroIndex : 0 });
-                  }}
-                >
-                  <img
-                    src={item.poster}
-                    alt={item.title}
-                    className={styles.posterImage}
-                    loading="lazy"
-                    onError={(event) => {
-                      event.currentTarget.src = "/c/header.jpg";
-                    }}
-                  />
-                  <div className={styles.posterOverlay} />
-                  <div className={styles.posterMeta}>
-                    <span className={styles.posterType}>{item.type}</span>
-                    <h3 className={`${styles.posterTitle} font-display`}>{item.title}</h3>
-                    <p className={styles.posterInfo}>{item.genre} · {item.year || "Archiv"} · {(item.rating || 0).toFixed(1)}</p>
-                  </div>
-                </button>
-              )})}
-            </div>
-          </section>
-        ))}
+              <div className={styles.posterRow}>
+                {shelf.items.slice(0, 10).map((item, itemIndex) => {
+                  const heroIndex = safeHeroItems.findIndex((entry) => entry.id === item.id);
+                  const target: FocusTarget = {
+                    zone: "shelf",
+                    rowIndex: shelfRowIndex,
+                    itemIndex,
+                    heroIndex: heroIndex >= 0 ? heroIndex : 0,
+                  };
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`${styles.posterCard} ${isSameFocusTarget(focusTarget, target) ? styles.focusedItem : ""}`}
+                      data-focus-key={`shelf-${shelfRowIndex}-${itemIndex}`}
+                      onClick={() => {
+                        registerActivity(true);
+                        setFocusedPreview(target, true);
+                      }}
+                      onFocus={() => {
+                        if (isSameFocusTarget(focusTarget, target)) return;
+                        registerActivity(true);
+                        setFocusedPreview(target);
+                      }}
+                    >
+                      <img
+                        src={item.poster}
+                        alt={item.title}
+                        className={styles.posterImage}
+                        loading="lazy"
+                        onError={(event) => {
+                          event.currentTarget.src = "/c/header.jpg";
+                        }}
+                      />
+                      <div className={styles.posterOverlay} />
+                      <div className={styles.posterMeta}>
+                        <span className={styles.posterType}>{item.type}</span>
+                        <h3 className={`${styles.posterTitle} font-display`}>{item.title}</h3>
+                        <p className={styles.posterInfo}>{item.genre} · {item.year || "Archiv"} · {(item.rating || 0).toFixed(1)}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
       </section>
     </div>
   );

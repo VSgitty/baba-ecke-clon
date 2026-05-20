@@ -6,7 +6,7 @@ export function CineTicker() {
   return (
     <section
       id="cine-ticker-root"
-      className="w-full overflow-hidden border-y py-2.5"
+      className="relative z-30 w-full overflow-hidden border-y py-2.5"
       style={{
         borderColor: "rgba(245,176,52,0.1)",
         background:
@@ -15,6 +15,8 @@ export function CineTicker() {
       }}
       aria-label="Cine ticker"
     >
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-10 bg-gradient-to-r from-[#050912] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-10 bg-gradient-to-l from-[#050912] to-transparent" />
       <div className="overflow-hidden px-0">
         <div className="movie-list-track ticker-track whitespace-nowrap text-[0.78rem] font-bold uppercase tracking-[0.12em]">
           {items.map((title, index) => (

@@ -21,7 +21,7 @@ export function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative -mt-16 overflow-hidden pb-0 pt-16"
+      className="relative -mt-16 min-h-[100svh] overflow-hidden pb-0 pt-16"
     >
       {/* Layer 1 — deep background image */}
       <motion.div
@@ -68,7 +68,7 @@ export function HeroSection() {
       />
 
       {/* Layer 5 — bottom fade to body */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] h-32 bg-gradient-to-t from-[#060910] to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] h-44 bg-gradient-to-t from-[#060910] via-[#060910f0] to-transparent" />
 
       {/* VHS timestamp watermark */}
       <div
@@ -81,10 +81,10 @@ export function HeroSection() {
 
       {/* Content */}
       <motion.div
-        className="relative z-10 mx-auto h-[44vh] min-h-[280px] w-full max-w-[1800px] sm:h-[52vh] lg:h-[60vh]"
+        className="relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-[1800px] items-end"
         style={{ y: titleY, opacity: titleOpacity }}
       >
-        <div className="absolute inset-x-0 bottom-10 px-6 sm:px-10 lg:px-12">
+        <div className="safe-reel-inline w-full pb-14 sm:pb-16 lg:pb-20">
           <p
             className="mb-3 text-[10px] font-bold uppercase tracking-[0.32em] opacity-80"
             style={{ color: "var(--neon-cyan)", textShadow: "0 0 18px rgba(34,211,238,0.5)" }}
@@ -93,7 +93,7 @@ export function HeroSection() {
           </p>
 
           <h1
-            className="max-w-[36ch] text-4xl leading-[1.02] drop-shadow-[0_14px_24px_rgba(0,0,0,0.8)] sm:text-5xl lg:text-7xl"
+            className="max-w-[34ch] text-4xl uppercase leading-[1.02] drop-shadow-[0_14px_24px_rgba(0,0,0,0.8)] sm:text-5xl lg:text-7xl"
             style={{
               color: "#f0e8d5",
               textShadow: "0 4px 28px rgba(0,0,0,0.7), 0 0 60px rgba(245,176,52,0.06)"

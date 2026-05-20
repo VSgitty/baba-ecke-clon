@@ -9,6 +9,94 @@
     linear-gradient(180deg, #05080f 0%, #060a12 28%, #090d16 100%);
 }
 
+.modeOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 18%, rgba(255, 106, 61, 0.18), rgba(2, 5, 10, 0.94) 48%), rgba(3, 6, 12, 0.94);
+  backdrop-filter: blur(14px);
+}
+
+.modeNoise {
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.035) 1px, transparent 1px, transparent 4px),
+    radial-gradient(circle at 20% 10%, rgba(53, 224, 255, 0.16), transparent 24%),
+    radial-gradient(circle at 80% 18%, rgba(255, 106, 61, 0.16), transparent 28%);
+  opacity: 0.62;
+  mix-blend-mode: screen;
+}
+
+.modePanel {
+  position: relative;
+  z-index: 1;
+  width: min(52rem, 88vw);
+  border-radius: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(12, 18, 28, 0.82), rgba(6, 10, 17, 0.72));
+  box-shadow: 0 32px 120px rgba(0, 0, 0, 0.42);
+  padding: 2.25rem;
+  text-align: center;
+}
+
+.idlePanel {
+  width: min(46rem, 84vw);
+}
+
+.modeEyebrow {
+  font-size: 0.82rem;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: #8defff;
+}
+
+.modeTitle {
+  margin-top: 1rem;
+  font-size: clamp(3rem, 8vw, 6rem);
+  line-height: 0.9;
+}
+
+.modeCopy {
+  margin: 1rem auto 0;
+  max-width: 36rem;
+  color: rgba(237, 243, 255, 0.76);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.modeButton {
+  margin-top: 1.4rem;
+  border-radius: 999px;
+  padding: 1rem 1.5rem;
+  min-width: 12rem;
+  background: linear-gradient(135deg, #ff6a3d, #ffd56f);
+  color: #160d06;
+  font-size: 0.9rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  box-shadow: 0 0 36px rgba(255, 106, 61, 0.25);
+}
+
+.idleMetaRow {
+  margin-top: 1.35rem;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.idleMetaRow span {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.7rem 1rem;
+  font-size: 0.84rem;
+  color: #e5f1ff;
+}
+
 .backgroundFrame {
   position: absolute;
   inset: 0;
@@ -469,6 +557,12 @@
 }
 
 @media (max-width: 820px) {
+  .modePanel,
+  .idlePanel {
+    width: min(92vw, 40rem);
+    padding: 1.4rem;
+  }
+
   .topBar,
   .shelfHeader,
   .heroVisualCluster {

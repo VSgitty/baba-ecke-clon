@@ -4,6 +4,7 @@
    DESIGN TOKENS — PREMIUM RETRO CINE
    ================================================================ */
 :root {
+  --reel-safe-inline: clamp(1rem, 2.2vw, 2rem);
   --background: 222 34% 6%;
   --foreground: 210 38% 95%;
   --muted: 222 30% 11%;
@@ -35,6 +36,12 @@
   --shadow-card: 0 28px 56px -18px rgba(0, 0, 0, 0.85), 0 8px 18px -8px rgba(0, 0, 0, 0.55);
   --glow-brand: 0 0 28px rgba(245, 176, 52, 0.38), 0 0 90px rgba(245, 176, 52, 0.13);
   --glow-cyan: 0 0 28px rgba(34, 211, 238, 0.38), 0 0 90px rgba(34, 211, 238, 0.13);
+}
+
+@media (min-width: 1180px) {
+  :root {
+    --reel-safe-inline: clamp(5.25rem, 7.1vw, 8.8rem);
+  }
 }
 
 .dark {
@@ -202,6 +209,10 @@ h3,
 .site-shell {
   width: min(1520px, 96vw);
   margin-inline: auto;
+}
+
+.safe-reel-inline {
+  padding-inline: var(--reel-safe-inline);
 }
 
 /* ================================================================
@@ -1087,6 +1098,10 @@ h3,
   display: inline-block;
 }
 
+.franchise-logo-track {
+  animation: franchise-rail-run 32s linear infinite;
+}
+
 .movie-list-track {
   text-shadow: 0 1px 0 rgba(0,0,0,0.6);
 }
@@ -1142,6 +1157,7 @@ h3,
 @media (max-width: 1024px) {
   .site-navbar::after,
   .ticker-track,
+  .franchise-logo-track,
   .franchise-rail-track,
   .continue-card-rail-track,
   .franchise-top-aurora {
@@ -1152,6 +1168,7 @@ h3,
 @media (prefers-reduced-motion: reduce) {
   .site-navbar::after,
   .ticker-track,
+  .franchise-logo-track,
   .franchise-rail-track,
   .continue-card-rail-track,
   .franchise-top-aurora,

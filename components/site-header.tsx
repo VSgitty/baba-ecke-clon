@@ -14,7 +14,7 @@ export function SiteHeader() {
 
   return (
     <header className="site-navbar fixed inset-x-0 top-0 z-50 border-b">
-      <div className="site-navbar-inner mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="site-navbar-inner safe-reel-inline mx-auto flex h-16 w-full max-w-[1800px] items-center justify-between">
         {/* Logo */}
         <Link href="/" className="group flex items-center gap-3">
           <div className="site-brand-badge relative grid h-10 w-10 place-items-center rounded-xl text-base transition-all group-hover:scale-105">
@@ -55,6 +55,14 @@ export function SiteHeader() {
         <div className="flex items-center gap-2">
           <Button
             asChild
+            variant="outline"
+            className="hidden border-white/12 bg-white/5 text-zinc-100 hover:bg-white/10 md:inline-flex"
+          >
+            <Link href="/tv">TV Mode</Link>
+          </Button>
+
+          <Button
+            asChild
             className="site-cta-btn hidden md:inline-flex"
           >
             <Link href="/my-list">Progress-System</Link>
@@ -73,6 +81,12 @@ export function SiteHeader() {
             </SheetTrigger>
             <SheetContent className="site-mobile-sheet">
               <div className="mt-10 space-y-1.5">
+                <Link
+                  href="/tv"
+                  className="site-mobile-link block rounded-xl px-4 py-3 text-sm font-medium text-zinc-100 transition hover:text-white"
+                >
+                  TV Mode
+                </Link>
                 {navItems.map((item) => (
                   <Link
                     key={item.href}
