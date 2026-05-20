@@ -16,6 +16,10 @@ export type CatalogItem = {
   streamUrl?: string;
 };
 
+type EnrichCatalogOptions = {
+  overwriteExistingPosters?: boolean;
+};
+
 type RawCatalogEntry = {
   id?: string;
   title?: string;
@@ -118,17 +122,21 @@ export async function getCombinedCatalogItems(limit?: number): Promise<CatalogIt
  * Import this only from Server Components — it calls the TMDB API.
  * Enrichment is batched (max `enrichLimit` items) and cached 24 h via Next.js fetch.
  */
-export async function getEnrichedCatalogItems(limit = 120, enrichLimit = limit): Promise<CatalogItem[]> {
+export async function getEnrichedCatalogItems(
+  limit = 120,
+  enrichLimit = limit,
+  options: EnrichCatalogOptions = {}
+): Promise<CatalogItem[]> {
   noStore();
   const allItems = await getCombinedCatalogItems(limit);
+  const overwriteExistingPosters = options.overwriteExistingPosters ?? false;
 
   // Lazy import keeps server-only code tree-shaken from client bundles
   const { resolveItemPoster } = await import("@/lib/tmdb");
 
-  // Only enrich entries that do not already have a poster/cover.
-  // This avoids replacing curated local artwork with fuzzy TMDB matches.
+  // Default: enrich only missing posters. Optional TV mode can force TMDB preference.
   const itemsToEnrich = allItems
-    .filter((item) => !item.poster)
+    .filter((item) => overwriteExistingPosters || !item.poster)
     .slice(0, Math.min(enrichLimit, allItems.length));
   if (itemsToEnrich.length === 0) return allItems;
 
@@ -143,7 +151,7 @@ export async function getEnrichedCatalogItems(limit = 120, enrichLimit = limit):
   });
 
   return allItems.map((item) => {
-    if (item.poster) return item;
+    if (!overwriteExistingPosters && item.poster) return item;
     const tmdbPoster = posterMap[item.id];
     return tmdbPoster ? { ...item, poster: tmdbPoster } : item;
   });

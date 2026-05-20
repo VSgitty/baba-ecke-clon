@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { getCombinedCatalogItems } from "@/lib/catalog";
+import { getEnrichedCatalogItems } from "@/lib/catalog";
 import {
   TvCinematicHome,
   type TvHeroItem,
@@ -62,7 +62,9 @@ function uniqueById<T extends { id: string }>(items: T[]): T[] {
 }
 
 export default async function TvPage() {
-  const catalog = await getCombinedCatalogItems(240);
+  const catalog = await getEnrichedCatalogItems(240, 180, {
+    overwriteExistingPosters: true,
+  });
 
   const rated = [...catalog].sort((a, b) => (b.rating || 0) - (a.rating || 0));
   const heroItems: TvHeroItem[] = uniqueById(rated)
