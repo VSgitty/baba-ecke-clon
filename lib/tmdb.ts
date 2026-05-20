@@ -379,40 +379,70 @@ function scoreYear(dateValue: string | undefined, year?: number): number {
   return -20;
 }
 
+type MatchScore = {
+  titleScore: number;
+  yearScore: number;
+  total: number;
+};
+
+function getMovieMatchScore(item: TmdbMovie, normalizedTitle: string, year?: number): MatchScore {
+  const titleScore = Math.max(
+    scoreTitleMatch(item.title, normalizedTitle),
+    scoreTitleMatch(item.original_title, normalizedTitle)
+  );
+  const yearScore = scoreYear(item.release_date, year);
+  return {
+    titleScore,
+    yearScore,
+    total: titleScore + yearScore + (item.popularity ?? 0) / 100,
+  };
+}
+
+function getTvMatchScore(item: TmdbTv, normalizedTitle: string, year?: number): MatchScore {
+  const titleScore = Math.max(
+    scoreTitleMatch(item.name, normalizedTitle),
+    scoreTitleMatch(item.original_name, normalizedTitle)
+  );
+  const yearScore = scoreYear(item.first_air_date, year);
+  return {
+    titleScore,
+    yearScore,
+    total: titleScore + yearScore + (item.popularity ?? 0) / 100,
+  };
+}
+
 function pickBestMovieResult(results: TmdbMovie[], title: string, year?: number): TmdbMovie | null {
   if (!results.length) return null;
   const normalizedTitle = normalizeSearchTitle(title);
+  const scored = results
+    .map((item) => ({ item, score: getMovieMatchScore(item, normalizedTitle, year) }))
+    .sort((a, b) => b.score.total - a.score.total);
 
-  return [...results]
-    .sort((a, b) => {
-      const scoreA = Math.max(
-        scoreTitleMatch(a.title, normalizedTitle),
-        scoreTitleMatch(a.original_title, normalizedTitle)
-      ) + scoreYear(a.release_date, year) + (a.popularity ?? 0) / 100;
-      const scoreB = Math.max(
-        scoreTitleMatch(b.title, normalizedTitle),
-        scoreTitleMatch(b.original_title, normalizedTitle)
-      ) + scoreYear(b.release_date, year) + (b.popularity ?? 0) / 100;
-      return scoreB - scoreA;
-    })[0] ?? null;
+  const best = scored[0];
+  if (!best) return null;
+
+  // Reject weak fuzzy matches to avoid incorrect artwork.
+  if (best.score.titleScore < 48) return null;
+  if (year && best.score.yearScore < 0 && best.score.titleScore < 90) return null;
+
+  return best.item;
 }
 
 function pickBestTvResult(results: TmdbTv[], title: string, year?: number): TmdbTv | null {
   if (!results.length) return null;
   const normalizedTitle = normalizeSearchTitle(title);
+  const scored = results
+    .map((item) => ({ item, score: getTvMatchScore(item, normalizedTitle, year) }))
+    .sort((a, b) => b.score.total - a.score.total);
 
-  return [...results]
-    .sort((a, b) => {
-      const scoreA = Math.max(
-        scoreTitleMatch(a.name, normalizedTitle),
-        scoreTitleMatch(a.original_name, normalizedTitle)
-      ) + scoreYear(a.first_air_date, year) + (a.popularity ?? 0) / 100;
-      const scoreB = Math.max(
-        scoreTitleMatch(b.name, normalizedTitle),
-        scoreTitleMatch(b.original_name, normalizedTitle)
-      ) + scoreYear(b.first_air_date, year) + (b.popularity ?? 0) / 100;
-      return scoreB - scoreA;
-    })[0] ?? null;
+  const best = scored[0];
+  if (!best) return null;
+
+  // Reject weak fuzzy matches to avoid incorrect artwork.
+  if (best.score.titleScore < 48) return null;
+  if (year && best.score.yearScore < 0 && best.score.titleScore < 90) return null;
+
+  return best.item;
 }
 
 // ── Resolved asset bundle ────────────────────────────────────────
