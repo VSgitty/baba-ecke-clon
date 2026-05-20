@@ -7,7 +7,7 @@ import { CatalogItem } from "./catalog";
 export type CatalogFormInput = {
   title: string;
   genre: string; // "Thriller, Sci-Fi"
-  year: number;
+  year?: number;
   duration: string; // "120 min" oder "8 Episodes"
   rating: string; // "8.5/10"
   type: "movie" | "series";

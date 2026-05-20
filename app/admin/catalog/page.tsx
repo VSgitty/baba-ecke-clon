@@ -21,7 +21,7 @@ export default function AdminCatalogPage() {
   const [form, setForm] = useState<CatalogFormInput>({
     title: "",
     genre: "Thriller",
-    year: new Date().getFullYear(),
+    year: undefined,
     duration: "120 min",
     rating: "7.5/10",
     type: "movie",
@@ -169,7 +169,7 @@ export default function AdminCatalogPage() {
       setForm({
         title: "",
         genre: "Thriller",
-        year: new Date().getFullYear(),
+        year: undefined,
         duration: "120 min",
         rating: "7.5/10",
         type: "movie",
@@ -277,8 +277,11 @@ export default function AdminCatalogPage() {
                   placeholder="Jahr"
                   min="1900"
                   max="2100"
-                  value={form.year}
-                  onChange={(e) => handleInputChange("year", parseInt(e.target.value))}
+                  value={form.year ?? ""}
+                  onChange={(e) => {
+                    const value = e.target.value.trim();
+                    handleInputChange("year", value ? parseInt(value, 10) : undefined);
+                  }}
                   className="bg-slate-800 border border-slate-700 rounded px-3 py-2"
                 />
               </div>

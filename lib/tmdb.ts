@@ -61,20 +61,24 @@ async function tmdbFetch<T>(endpoint: string, params: Record<string, string> = {
 type TmdbMovie = {
   id: number;
   title: string;
+  original_title?: string;
   poster_path: string | null;
   backdrop_path: string | null;
   overview?: string;
   vote_average?: number;
+  popularity?: number;
   release_date?: string;
 };
 
 type TmdbTv = {
   id: number;
   name: string;
+  original_name?: string;
   poster_path: string | null;
   backdrop_path: string | null;
   overview?: string;
   vote_average?: number;
+  popularity?: number;
   first_air_date?: string;
 };
 
@@ -107,20 +111,34 @@ type TmdbCollectionResult = {
   parts: TmdbMovie[];
 };
 
+const SEARCH_LANGUAGES = ["de-DE", "en-US"] as const;
+
 // ── Search ───────────────────────────────────────────────────────
 
 export async function searchMovie(title: string, year?: number): Promise<TmdbMovie | null> {
-  const params: Record<string, string> = { query: title, include_adult: "false" };
-  if (year) params.year = String(year);
-  const data = await tmdbFetch<TmdbSearchMovieResult>("/search/movie", params);
-  return pickBestMovieResult(data?.results ?? [], title, year);
+  const strictResults = await searchMovieCandidates(title, year);
+  const strictMatch = pickBestMovieResult(strictResults, title, year);
+  if (strictMatch) return strictMatch;
+
+  if (year) {
+    const relaxedResults = await searchMovieCandidates(title);
+    return pickBestMovieResult(relaxedResults, title, year);
+  }
+
+  return null;
 }
 
 export async function searchTv(title: string, year?: number): Promise<TmdbTv | null> {
-  const params: Record<string, string> = { query: title, include_adult: "false" };
-  if (year) params.first_air_date_year = String(year);
-  const data = await tmdbFetch<TmdbSearchTvResult>("/search/tv", params);
-  return pickBestTvResult(data?.results ?? [], title, year);
+  const strictResults = await searchTvCandidates(title, year);
+  const strictMatch = pickBestTvResult(strictResults, title, year);
+  if (strictMatch) return strictMatch;
+
+  if (year) {
+    const relaxedResults = await searchTvCandidates(title);
+    return pickBestTvResult(relaxedResults, title, year);
+  }
+
+  return null;
 }
 
 // ── Images ───────────────────────────────────────────────────────
@@ -150,35 +168,251 @@ function pickBestLogo(images: TmdbImagesResult | null): string | null {
 }
 
 function normalizeSearchTitle(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[’'`´]/g, "")
+    .replace(/&/g, " and ")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function buildSearchVariants(title: string): string[] {
+  const variants = new Set<string>();
+  const trimmed = title.trim();
+  if (!trimmed) return [];
+
+  variants.add(trimmed);
+  variants.add(trimmed.replace(/[’`´]/g, "'"));
+  variants.add(trimmed.replace(/[’'`´]/g, ""));
+  variants.add(trimmed.replace(/[:/\\-]+/g, " "));
+
+  for (const value of Array.from(variants)) {
+    buildStructuralVariants(value).forEach((variant) => variants.add(variant));
+  }
+
+  for (const value of Array.from(variants)) {
+    buildPossessiveVariants(value).forEach((variant) => variants.add(variant));
+  }
+
+  return Array.from(variants).filter((value) => value.trim().length >= 2);
+}
+
+function buildStructuralVariants(value: string): string[] {
+  const variants = new Set<string>();
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+
+  variants.add(trimmed);
+  variants.add(trimmed.replace(/[\[\](){}]/g, " ").replace(/\s+/g, " ").trim());
+  variants.add(trimmed.replace(/\s*[:\-|/].*$/, "").trim());
+  variants.add(trimmed.replace(/\s*\([^)]*\)/g, " ").replace(/\s+/g, " ").trim());
+  variants.add(trimmed.replace(/\s*\[[^\]]*\]/g, " ").replace(/\s+/g, " ").trim());
+
+  for (const variant of Array.from(variants)) {
+    buildSequelNumberVariants(variant).forEach((nextVariant) => variants.add(nextVariant));
+  }
+
+  return Array.from(variants).filter((variant) => variant.trim().length >= 2);
+}
+
+function buildSequelNumberVariants(value: string): string[] {
+  const variants = new Set<string>();
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+
+  const trailingArabic = trimmed.match(/^(.*?)(\d{1,2})$/);
+  if (trailingArabic) {
+    const prefix = trailingArabic[1]?.trim();
+    const num = Number.parseInt(trailingArabic[2] || "", 10);
+    if (prefix) variants.add(prefix);
+    const roman = toRoman(num);
+    if (prefix && roman) variants.add(`${prefix} ${roman}`);
+  }
+
+  const trailingRoman = trimmed.match(/^(.*)\b([IVX]{1,5})$/i);
+  if (trailingRoman) {
+    const prefix = trailingRoman[1]?.trim();
+    const roman = trailingRoman[2]?.toUpperCase();
+    const arabic = roman ? fromRoman(roman) : null;
+    if (prefix) variants.add(prefix);
+    if (prefix && arabic) variants.add(`${prefix} ${arabic}`);
+  }
+
+  return Array.from(variants).filter((variant) => variant.trim().length >= 2);
+}
+
+function toRoman(value: number): string | null {
+  const numerals: Array<[number, string]> = [
+    [10, "X"],
+    [9, "IX"],
+    [8, "VIII"],
+    [7, "VII"],
+    [6, "VI"],
+    [5, "V"],
+    [4, "IV"],
+    [3, "III"],
+    [2, "II"],
+    [1, "I"]
+  ];
+
+  if (!Number.isInteger(value) || value < 1 || value > 10) return null;
+
+  let remainder = value;
+  let result = "";
+  for (const [amount, symbol] of numerals) {
+    while (remainder >= amount) {
+      result += symbol;
+      remainder -= amount;
+    }
+  }
+
+  return result || null;
+}
+
+function fromRoman(value: string): number | null {
+  const numerals: Record<string, number> = {
+    I: 1,
+    V: 5,
+    X: 10
+  };
+
+  if (!/^[IVX]+$/.test(value)) return null;
+
+  let total = 0;
+  let previous = 0;
+  for (let i = value.length - 1; i >= 0; i -= 1) {
+    const current = numerals[value[i] || ""] || 0;
+    if (!current) return null;
+    total += current < previous ? -current : current;
+    previous = current;
+  }
+
+  return total >= 1 && total <= 10 ? total : null;
+}
+
+function buildPossessiveVariants(value: string): string[] {
+  const variants = new Set<string>();
+  const normalized = value.replace(/[’`´]/g, "'").trim();
+  if (!normalized) return [];
+
+  variants.add(normalized);
+  variants.add(normalized.replace(/'/g, ""));
+  variants.add(normalized.replace(/'/g, "’"));
+
+  if (!normalized.includes("'")) {
+    variants.add(normalized.replace(/\b([A-Za-z0-9]{3,})s\b/g, "$1's"));
+  }
+
+  return Array.from(variants).filter((variant) => variant.trim().length >= 2);
+}
+
+async function searchMovieCandidates(title: string, year?: number): Promise<TmdbMovie[]> {
+  const resultMap = new Map<number, TmdbMovie>();
+
+  for (const query of buildSearchVariants(title)) {
+    for (const language of SEARCH_LANGUAGES) {
+      const params: Record<string, string> = {
+        query,
+        include_adult: "false",
+        language,
+      };
+      if (year) params.year = String(year);
+
+      const data = await tmdbFetch<TmdbSearchMovieResult>("/search/movie", params);
+      for (const item of data?.results ?? []) {
+        if (!resultMap.has(item.id)) {
+          resultMap.set(item.id, item);
+        }
+      }
+    }
+  }
+
+  return Array.from(resultMap.values());
+}
+
+async function searchTvCandidates(title: string, year?: number): Promise<TmdbTv[]> {
+  const resultMap = new Map<number, TmdbTv>();
+
+  for (const query of buildSearchVariants(title)) {
+    for (const language of SEARCH_LANGUAGES) {
+      const params: Record<string, string> = {
+        query,
+        include_adult: "false",
+        language,
+      };
+      if (year) params.first_air_date_year = String(year);
+
+      const data = await tmdbFetch<TmdbSearchTvResult>("/search/tv", params);
+      for (const item of data?.results ?? []) {
+        if (!resultMap.has(item.id)) {
+          resultMap.set(item.id, item);
+        }
+      }
+    }
+  }
+
+  return Array.from(resultMap.values());
+}
+
+function scoreTitleMatch(candidate: string | undefined, normalizedQuery: string): number {
+  if (!candidate) return 0;
+
+  const normalizedCandidate = normalizeSearchTitle(candidate);
+  if (!normalizedCandidate) return 0;
+  if (normalizedCandidate === normalizedQuery) return 120;
+  if (normalizedCandidate.includes(normalizedQuery) || normalizedQuery.includes(normalizedCandidate)) return 90;
+
+  const queryWords = normalizedQuery.split(" ").filter(Boolean);
+  const candidateWords = new Set(normalizedCandidate.split(" ").filter(Boolean));
+  const overlap = queryWords.filter((word) => candidateWords.has(word)).length;
+  return overlap * 12;
+}
+
+function scoreYear(dateValue: string | undefined, year?: number): number {
+  if (!year || !dateValue) return 0;
+  const resultYear = Number.parseInt(dateValue.slice(0, 4), 10);
+  if (!Number.isFinite(resultYear)) return 0;
+  if (resultYear === year) return 30;
+  if (Math.abs(resultYear - year) === 1) return 10;
+  return -20;
 }
 
 function pickBestMovieResult(results: TmdbMovie[], title: string, year?: number): TmdbMovie | null {
   if (!results.length) return null;
   const normalizedTitle = normalizeSearchTitle(title);
-  const exact = results.find((result) => normalizeSearchTitle(result.title) === normalizedTitle);
-  if (exact) return exact;
 
-  if (year) {
-    const yearMatch = results.find((result) => result.release_date?.startsWith(String(year)));
-    if (yearMatch) return yearMatch;
-  }
-
-  return results[0] ?? null;
+  return [...results]
+    .sort((a, b) => {
+      const scoreA = Math.max(
+        scoreTitleMatch(a.title, normalizedTitle),
+        scoreTitleMatch(a.original_title, normalizedTitle)
+      ) + scoreYear(a.release_date, year) + (a.popularity ?? 0) / 100;
+      const scoreB = Math.max(
+        scoreTitleMatch(b.title, normalizedTitle),
+        scoreTitleMatch(b.original_title, normalizedTitle)
+      ) + scoreYear(b.release_date, year) + (b.popularity ?? 0) / 100;
+      return scoreB - scoreA;
+    })[0] ?? null;
 }
 
 function pickBestTvResult(results: TmdbTv[], title: string, year?: number): TmdbTv | null {
   if (!results.length) return null;
   const normalizedTitle = normalizeSearchTitle(title);
-  const exact = results.find((result) => normalizeSearchTitle(result.name) === normalizedTitle);
-  if (exact) return exact;
 
-  if (year) {
-    const yearMatch = results.find((result) => result.first_air_date?.startsWith(String(year)));
-    if (yearMatch) return yearMatch;
-  }
-
-  return results[0] ?? null;
+  return [...results]
+    .sort((a, b) => {
+      const scoreA = Math.max(
+        scoreTitleMatch(a.name, normalizedTitle),
+        scoreTitleMatch(a.original_name, normalizedTitle)
+      ) + scoreYear(a.first_air_date, year) + (a.popularity ?? 0) / 100;
+      const scoreB = Math.max(
+        scoreTitleMatch(b.name, normalizedTitle),
+        scoreTitleMatch(b.original_name, normalizedTitle)
+      ) + scoreYear(b.first_air_date, year) + (b.popularity ?? 0) / 100;
+      return scoreB - scoreA;
+    })[0] ?? null;
 }
 
 // ── Resolved asset bundle ────────────────────────────────────────
@@ -313,6 +547,10 @@ function toCatalogYear(dateValue: string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function pickLocalizedText(...values: Array<string | undefined>): string {
+  return values.map((value) => value?.trim()).find((value) => Boolean(value)) || "";
+}
+
 export async function resolveCatalogAutofill(
   title: string,
   type: "movie" | "series",
@@ -325,22 +563,23 @@ export async function resolveCatalogAutofill(
       const match = await searchTv(title, year);
       if (!match) return null;
 
-      const detail = await tmdbFetch<TmdbTvDetail>(`/tv/${match.id}`);
-      const genre = detail?.genres?.[0]?.name || "Drama";
-      const episodes = detail?.number_of_episodes;
+      const detailDe = await tmdbFetch<TmdbTvDetail>(`/tv/${match.id}`, { language: "de-DE" });
+      const detailEn = await tmdbFetch<TmdbTvDetail>(`/tv/${match.id}`, { language: "en-US" });
+      const genre = detailDe?.genres?.[0]?.name || detailEn?.genres?.[0]?.name || "Drama";
+      const episodes = detailDe?.number_of_episodes ?? detailEn?.number_of_episodes;
       const duration = episodes && episodes > 0 ? `${episodes} Episodes` : "8 Episodes";
-      const resolvedYear = toCatalogYear(detail?.first_air_date ?? match.first_air_date);
-      const poster = imgPoster(detail?.poster_path ?? match.poster_path);
+      const resolvedYear = toCatalogYear(detailDe?.first_air_date ?? detailEn?.first_air_date ?? match.first_air_date);
+      const poster = imgPoster(detailDe?.poster_path ?? detailEn?.poster_path ?? match.poster_path);
       if (!poster) return null;
 
       return {
-        title: detail?.name || match.name || title,
+        title: pickLocalizedText(detailDe?.name, detailEn?.name, match.name, title),
         type,
         genre,
         year: resolvedYear,
         duration,
-        rating: formatRating(detail?.vote_average ?? match.vote_average),
-        description: detail?.overview?.trim() || match.overview?.trim() || "",
+        rating: formatRating(detailDe?.vote_average ?? detailEn?.vote_average ?? match.vote_average),
+        description: pickLocalizedText(detailDe?.overview, detailEn?.overview, match.overview),
         poster
       };
     }
@@ -348,22 +587,23 @@ export async function resolveCatalogAutofill(
     const match = await searchMovie(title, year);
     if (!match) return null;
 
-    const detail = await tmdbFetch<TmdbMovieDetail>(`/movie/${match.id}`);
-    const genre = detail?.genres?.[0]?.name || "Action";
-    const runtime = detail?.runtime;
+    const detailDe = await tmdbFetch<TmdbMovieDetail>(`/movie/${match.id}`, { language: "de-DE" });
+    const detailEn = await tmdbFetch<TmdbMovieDetail>(`/movie/${match.id}`, { language: "en-US" });
+    const genre = detailDe?.genres?.[0]?.name || detailEn?.genres?.[0]?.name || "Action";
+    const runtime = detailDe?.runtime ?? detailEn?.runtime;
     const duration = runtime && runtime > 0 ? `${runtime} min` : "120 min";
-    const resolvedYear = toCatalogYear(detail?.release_date ?? match.release_date);
-    const poster = imgPoster(detail?.poster_path ?? match.poster_path);
+    const resolvedYear = toCatalogYear(detailDe?.release_date ?? detailEn?.release_date ?? match.release_date);
+    const poster = imgPoster(detailDe?.poster_path ?? detailEn?.poster_path ?? match.poster_path);
     if (!poster) return null;
 
     return {
-      title: detail?.title || match.title || title,
+      title: pickLocalizedText(detailDe?.title, detailEn?.title, match.title, title),
       type,
       genre,
       year: resolvedYear,
       duration,
-      rating: formatRating(detail?.vote_average ?? match.vote_average),
-      description: detail?.overview?.trim() || match.overview?.trim() || "",
+      rating: formatRating(detailDe?.vote_average ?? detailEn?.vote_average ?? match.vote_average),
+      description: pickLocalizedText(detailDe?.overview, detailEn?.overview, match.overview),
       poster
     };
   } catch {
