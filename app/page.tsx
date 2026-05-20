@@ -9,7 +9,6 @@ import { HeroSection } from "@/components/hero-section";
 import { FranchiseLogoSlider } from "@/components/franchise-logo-slider";
 import { CineTicker } from "@/components/cine-ticker";
 import { CatalogSectionsGrid } from "@/components/catalog-sections-grid";
-import { FeatureGrid } from "@/components/feature-grid";
 import { CineDashboard } from "@/components/cine-dashboard";
 import { TestimonialsSection } from "@/components/testimonials-section";
 import { FaqSection } from "@/components/faq-section";
@@ -91,7 +90,6 @@ export default async function HomePage() {
       </div>
 
       <CatalogSectionsGrid />
-      <FeatureGrid />
       <CineDashboard catalog={catalog} />
       <TestimonialsSection />
       <FaqSection />
