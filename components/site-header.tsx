@@ -14,7 +14,7 @@ export function SiteHeader() {
 
   return (
     <header className="site-navbar fixed inset-x-0 top-0 z-50 border-b">
-      <div className="site-navbar-inner safe-reel-inline mx-auto flex h-16 w-full max-w-[1800px] items-center justify-between">
+      <div className="site-navbar-inner mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="group flex items-center gap-3">
           <div className="site-brand-badge relative grid h-10 w-10 place-items-center rounded-xl text-base transition-all group-hover:scale-105">

@@ -21,7 +21,7 @@ export function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative -mt-16 min-h-[100svh] overflow-hidden pb-0 pt-16"
+      className="relative flex flex-1 flex-col overflow-hidden"
     >
       {/* Layer 1 — deep background image */}
       <motion.div
@@ -81,7 +81,7 @@ export function HeroSection() {
 
       {/* Content */}
       <motion.div
-        className="relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-[1800px] items-end"
+        className="relative z-10 mx-auto flex flex-1 w-full max-w-[1800px] items-end"
         style={{ y: titleY, opacity: titleOpacity }}
       >
         <div className="safe-reel-inline w-full pb-14 sm:pb-16 lg:pb-20">

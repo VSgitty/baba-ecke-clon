@@ -83,9 +83,13 @@ export default async function HomePage() {
         </a>
       </div>
 
-      <HeroSection />
-      <FranchiseLogoSlider items={franchiseLogoItems} />
-      <CineTicker />
+      {/* ── First Fold: hero + logos + ticker fill exactly one viewport ── */}
+      <div className="relative -mt-16 flex h-[100svh] min-h-[600px] flex-col overflow-hidden pt-16">
+        <HeroSection />
+        <FranchiseLogoSlider items={franchiseLogoItems} />
+        <CineTicker />
+      </div>
+
       <CatalogSectionsGrid />
       <FeatureGrid />
       <CineDashboard catalog={catalog} />

@@ -16,12 +16,11 @@ export function FranchiseLogoSlider({ items }: { items: FranchiseLogoItem[] }) {
   const loop = [...filtered, ...filtered];
 
   return (
-    <section className="relative z-20 -mt-20 pb-4 pt-16">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#060910] via-[#060910d9] to-transparent" />
+    <section className="relative z-20 shrink-0 py-2">
 
       <div className="relative mx-auto w-full max-w-[1800px] safe-reel-inline">
         <div
-          className="relative overflow-hidden rounded-2xl border px-3 py-3 sm:px-5"
+              className="relative overflow-hidden rounded-xl border px-3 py-2 sm:px-4"
           style={{
             borderColor: "rgba(255,255,255,0.1)",
             background:
@@ -32,11 +31,11 @@ export function FranchiseLogoSlider({ items }: { items: FranchiseLogoItem[] }) {
           <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-[#060910] to-transparent" />
           <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-[#060910] to-transparent" />
 
-          <div className="franchise-logo-track flex w-max items-center gap-8 sm:gap-10">
+          <div className="franchise-logo-track flex w-max items-center gap-5 sm:gap-7">
             {loop.map((item, index) => (
               <article
                 key={`${item.slug}-${index}`}
-                className="group relative flex h-24 w-[220px] shrink-0 items-center justify-center rounded-xl border px-5"
+                className="group relative flex h-14 w-[160px] shrink-0 items-center justify-center rounded-lg border px-4"
                 style={{
                   borderColor: "rgba(255,255,255,0.1)",
                   background: "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
@@ -55,7 +54,7 @@ export function FranchiseLogoSlider({ items }: { items: FranchiseLogoItem[] }) {
                     alt={`${item.title} logo`}
                     width={260}
                     height={90}
-                    className="relative z-[1] max-h-[64px] w-auto max-w-full object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.65)]"
+                    className="relative z-[1] max-h-[44px] w-auto max-w-full object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.65)]"
                     unoptimized={item.logoUrl.endsWith(".svg")}
                   />
                 ) : (
