@@ -35,7 +35,7 @@ async function resolveFranchiseHeroLogo(world: FranchiseWorldDef): Promise<strin
 }
 
 export default async function HomePage() {
-  const catalog = await getEnrichedCatalogItems(140);
+  const catalog = await getEnrichedCatalogItems(140, 140, { overwriteExistingPosters: true });
   const customFranchises = await loadCustomFranchises();
   const worlds = [...franchiseWorlds, ...customFranchises].slice(0, 18);
 

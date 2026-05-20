@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { getCombinedCatalogItems } from "@/lib/catalog";
+import { getEnrichedCatalogItems } from "@/lib/catalog";
 import {
   MobileCinematicLanding,
   type MobileCategorySection,
@@ -75,7 +75,7 @@ export const metadata: Metadata = {
 };
 
 export default async function MobileLandingPage() {
-  const catalog = await getCombinedCatalogItems(220);
+  const catalog = await getEnrichedCatalogItems(220, 220, { overwriteExistingPosters: true });
   const fallback = catalog.slice(0, 30);
 
   const categories: MobileCategorySection[] = collectionBlueprints.map((blueprint, idx) => {

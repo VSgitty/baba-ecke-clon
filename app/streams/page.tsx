@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { getCombinedCatalogItems } from "@/lib/catalog";
+import { getEnrichedCatalogItems } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function StreamsPage() {
-  const catalog = await getCombinedCatalogItems(220);
+  const catalog = await getEnrichedCatalogItems(220, 220, { overwriteExistingPosters: true });
   const streamable = catalog.filter((item) => Boolean(item.streamUrl));
 
   return (

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { getCombinedCatalogItems } from "@/lib/catalog";
+import { getEnrichedCatalogItems } from "@/lib/catalog";
 import { MyListView } from "@/components/my-list-view";
 
 export const metadata: Metadata = {
@@ -9,6 +9,6 @@ export const metadata: Metadata = {
 };
 
 export default async function MyListPage() {
-  const catalog = await getCombinedCatalogItems(180);
+  const catalog = await getEnrichedCatalogItems(180, 180, { overwriteExistingPosters: true });
   return <MyListView catalog={catalog} />;
 }
