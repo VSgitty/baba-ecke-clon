@@ -546,7 +546,14 @@ export async function resolveItemPoster(
   title: string,
   type: "movie" | "series",
   year?: number,
+  tmdbId?: number,
 ): Promise<string | null> {
+  // Direct ID lookup — guaranteed correct, no fuzzy matching
+  if (tmdbId) {
+    const endpoint = type === "series" ? `/tv/${tmdbId}` : `/movie/${tmdbId}`;
+    const data = await tmdbFetch<{ poster_path: string | null }>(endpoint);
+    return imgPoster(data?.poster_path) ?? null;
+  }
   if (type === "series") {
     const tv = await searchTv(title, year);
     return imgPoster(tv?.poster_path) ?? null;

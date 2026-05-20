@@ -14,6 +14,7 @@ export type CatalogItem = {
   rating?: number;
   description?: string;
   streamUrl?: string;
+  tmdbId?: number;
 };
 
 type EnrichCatalogOptions = {
@@ -32,6 +33,7 @@ type RawCatalogEntry = {
   rating?: number | string;
   description?: string;
   streamUrl?: string;
+  tmdbId?: number;
 };
 
 function toGenre(genre: string | undefined): string {
@@ -64,7 +66,8 @@ function toCatalogItem(id: string, item: RawCatalogEntry): CatalogItem {
     poster: item.poster || item.cover,
     rating: toRating(item.rating),
     description: item.description,
-    streamUrl: item.streamUrl
+    streamUrl: item.streamUrl,
+    tmdbId: item.tmdbId,
   };
 }
 
@@ -141,7 +144,7 @@ export async function getEnrichedCatalogItems(
   if (itemsToEnrich.length === 0) return allItems;
 
   const enriched = await Promise.allSettled(
-    itemsToEnrich.map((item) => resolveItemPoster(item.title, item.type, item.year))
+    itemsToEnrich.map((item) => resolveItemPoster(item.title, item.type, item.year, item.tmdbId))
   );
 
   const posterMap: Record<string, string | null> = {};
