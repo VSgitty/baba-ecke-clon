@@ -16,6 +16,16 @@
   perspective: 1200px;
 }
 
+.previewBackdrop {
+  position: absolute;
+  inset: -4%;
+  width: 108%;
+  height: 108%;
+  object-fit: cover;
+  filter: saturate(1.08) contrast(1.04) blur(2px);
+  opacity: 0.36;
+}
+
 .coverRail {
   position: absolute;
   left: -5%;
@@ -304,6 +314,15 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.queueItem:focus-visible,
+.posterCard:focus-visible,
+.focusedItem {
+  outline: none;
+  border-color: rgba(110, 236, 255, 0.82);
+  box-shadow: 0 0 0 3px rgba(53, 224, 255, 0.18), 0 22px 48px rgba(0, 0, 0, 0.3);
+  transform: translateY(-4px) scale(1.01);
+}
+
 .queuePoster {
   width: 68px;
   aspect-ratio: 0.7;
@@ -382,6 +401,8 @@
   aspect-ratio: 0.72;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: #0a111d;
+  padding: 0;
+  text-align: left;
   transform: translateY(0);
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }

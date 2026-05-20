@@ -6,6 +6,21 @@ function isCrawler(ua: string): boolean {
   );
 }
 
+function isTvUserAgent(ua: string): boolean {
+  return /smart-tv|smarttv|hbbtv|appletv|googletv|android tv|aft[a-z0-9-]+|bravia|tizen|web0s|webos|netcast|viera|roku|playstation|xbox/i.test(
+    ua
+  );
+}
+
+function wantsTvExperience(request: NextRequest): boolean {
+  const view = request.nextUrl.searchParams.get("view")?.toLowerCase();
+  const tv = request.nextUrl.searchParams.get("tv")?.toLowerCase();
+  if (view === "tv" || tv === "1" || tv === "true") return true;
+
+  const ua = request.headers.get("user-agent") || "";
+  return isTvUserAgent(ua);
+}
+
 function applySecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("X-Content-Type-Options", "nosniff");
@@ -81,6 +96,14 @@ export function middleware(request: NextRequest) {
   const ua = request.headers.get("user-agent") || "";
   if (isCrawler(ua)) {
     return applySecurityHeaders(NextResponse.next());
+  }
+
+  if (wantsTvExperience(request)) {
+    const tvUrl = request.nextUrl.clone();
+    tvUrl.pathname = "/tv";
+    tvUrl.searchParams.delete("tv");
+    tvUrl.searchParams.delete("view");
+    return applySecurityHeaders(NextResponse.redirect(tvUrl));
   }
 
   const device = userAgent(request);
