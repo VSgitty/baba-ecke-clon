@@ -82,6 +82,14 @@ function isLocalCachedPoster(poster: string | undefined): boolean {
   return Boolean(poster && poster.startsWith("/cache/posters/"));
 }
 
+function isRemotePosterUrl(poster: string | undefined): boolean {
+  return Boolean(poster && /^https?:\/\//i.test(poster));
+}
+
+function toPosterProxyUrl(poster: string): string {
+  return `/api/poster?url=${encodeURIComponent(poster)}`;
+}
+
 export function getCatalogItems(limit?: number): CatalogItem[] {
   const entries = Object.entries(rawCatalog as Record<string, RawCatalogEntry>);
   const actualLimit = limit ? Math.min(limit, entries.length) : entries.length;
@@ -181,6 +189,13 @@ export async function getEnrichedCatalogItems(
     });
   }
 
-  const { cacheCatalogPosters } = await import("@/lib/poster-cache");
-  return cacheCatalogPosters(resolvedItems);
+  return resolvedItems.map((item) => {
+    if (!item.poster) return item;
+    if (isLocalCachedPoster(item.poster)) return item;
+    if (!isRemotePosterUrl(item.poster)) return item;
+    return {
+      ...item,
+      poster: toPosterProxyUrl(item.poster),
+    };
+  });
 }
