@@ -174,8 +174,9 @@ export async function getEnrichedCatalogItems(
       const tmdbPoster = posterMap[item.id];
       if (tmdbPoster) return { ...item, poster: tmdbPoster };
 
-      // If no TMDB match exists yet, keep already-local cached files only.
+      // Keep existing posters as fallback when TMDB can't resolve reliably.
       if (isLocalCachedPoster(item.poster)) return item;
+      if (item.poster) return item;
       return { ...item, poster: undefined };
     });
   }

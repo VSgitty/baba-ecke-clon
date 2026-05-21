@@ -128,14 +128,32 @@ function extractSequelNumberFromTitle(title: string): number | null {
   return token ? romanMap[token] ?? null : null;
 }
 
+function buildFranchiseGroupKey(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/\(.*?\)/g, " ")
+    .replace(/[:\-_/]+/g, " ")
+    .replace(/\b(part|chapter|episode|folge|film|movie|staffel|season|vol|volume)\b/g, " ")
+    .replace(/\b(\d{1,2}|x|ix|v?i{1,3}|iv|v)\b/g, " ")
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function compareChronologically(a: CatalogItem, b: CatalogItem): number {
+  const groupA = buildFranchiseGroupKey(a.title);
+  const groupB = buildFranchiseGroupKey(b.title);
+  if (groupA !== groupB) {
+    return groupA.localeCompare(groupB, "de-DE", { sensitivity: "base" });
+  }
+
+  const seqA = extractSequelNumberFromTitle(a.title) ?? Number.MAX_SAFE_INTEGER;
+  const seqB = extractSequelNumberFromTitle(b.title) ?? Number.MAX_SAFE_INTEGER;
+  if (seqA !== seqB) return seqA - seqB;
+
   const yearA = a.year ?? 9999;
   const yearB = b.year ?? 9999;
   if (yearA !== yearB) return yearA - yearB;
-
-  const seqA = extractSequelNumberFromTitle(a.title) ?? 999;
-  const seqB = extractSequelNumberFromTitle(b.title) ?? 999;
-  if (seqA !== seqB) return seqA - seqB;
 
   return a.title.localeCompare(b.title, "de-DE", { sensitivity: "base" });
 }
@@ -661,7 +679,24 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
           { label: "Continue Watching", value: continueWatching.length, accent: "var(--neon-purple)" },
           { label: "Gefilterte Titel", value: filteredCatalog.length, accent: "var(--brand-strong)" }
         ].map((stat) => (
-          <div key={stat.label} className="stat-panel px-5 py-4">
+          <div
+            key={stat.label}
+            className="stat-panel px-5 py-4 cursor-pointer"
+            onClick={() => {
+              if (stat.label === "Continue Watching") {
+                setShowFranchiseTracker(true);
+                setShowContinueWatching(false);
+                return;
+              }
+              if (stat.label === "Watchlist") {
+                setShowContinueWatching(true);
+                setShowFranchiseTracker(false);
+                return;
+              }
+              setShowFranchiseTracker(false);
+              setShowContinueWatching(false);
+            }}
+          >
             <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">{stat.label}</p>
             <p
               className="font-display text-4xl"
@@ -673,6 +708,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
         ))}
       </section>
 
+      {showContinueWatching && (
       <section className="site-shell grid w-full gap-4 px-4 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
         <Card className="cine-panel">
           <CardHeader>
@@ -782,7 +818,9 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
           </CardContent>
         </Card>
       </section>
+      )}
 
+      {showFranchiseTracker && (
       <section className="site-shell w-full px-4 sm:px-6 lg:px-8">
         <Card className="cine-panel">
           <CardHeader>
@@ -859,6 +897,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
           </CardContent>
         </Card>
       </section>
+      )}
 
       <section className="site-shell w-full px-4 sm:px-6 lg:px-8">
         <Card className="cine-panel">
