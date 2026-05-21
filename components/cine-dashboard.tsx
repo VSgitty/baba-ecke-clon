@@ -15,8 +15,13 @@ import type { CustomShelf } from "@/lib/shelf-manager";
 
 const WATCHLIST_KEY = "baba_watchlist_v3";
 const FRANCHISE_KEY = "baba_franchise_v3";
-const DRAG_LAYOUT_KEY = "baba_drag_layout_v1";
+const DRAG_LAYOUT_KEY = "baba_drag_layout_v2";
 const SHELF_CUSTOMIZATION_KEY = "baba_shelf_customization_v1";
+
+type DragLayoutEntry = {
+  shelf: string;
+  order?: number;
+};
 
 type FranchiseState = Record<string, Record<string, boolean>>;
 
@@ -88,6 +93,74 @@ function classifyCatalogItem(item: CatalogItem): string {
   return "cult";
 }
 
+function extractSequelNumberFromTitle(title: string): number | null {
+  const normalized = title
+    .toLowerCase()
+    .replace(/\(.*?\)/g, " ")
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!normalized) return null;
+
+  const arabic = normalized.match(/(?:^|\s)(\d{1,2})(?:\s|$)/g);
+  if (arabic?.length) {
+    const raw = arabic[arabic.length - 1]?.match(/\d{1,2}/)?.[0];
+    const parsed = raw ? Number.parseInt(raw, 10) : NaN;
+    if (Number.isFinite(parsed) && parsed >= 1 && parsed <= 99) return parsed;
+  }
+
+  const romanMatch = normalized.match(/(?:^|\s)(x|ix|v?i{1,3}|iv|v)(?:\s|$)/g);
+  if (!romanMatch?.length) return null;
+  const token = romanMatch[romanMatch.length - 1]?.trim();
+  const romanMap: Record<string, number> = {
+    i: 1,
+    ii: 2,
+    iii: 3,
+    iv: 4,
+    v: 5,
+    vi: 6,
+    vii: 7,
+    viii: 8,
+    ix: 9,
+    x: 10,
+  };
+  return token ? romanMap[token] ?? null : null;
+}
+
+function compareChronologically(a: CatalogItem, b: CatalogItem): number {
+  const yearA = a.year ?? 9999;
+  const yearB = b.year ?? 9999;
+  if (yearA !== yearB) return yearA - yearB;
+
+  const seqA = extractSequelNumberFromTitle(a.title) ?? 999;
+  const seqB = extractSequelNumberFromTitle(b.title) ?? 999;
+  if (seqA !== seqB) return seqA - seqB;
+
+  return a.title.localeCompare(b.title, "de-DE", { sensitivity: "base" });
+}
+
+function sortShelfItemsByChronologyWithPins(
+  items: CatalogItem[],
+  layout: Record<string, DragLayoutEntry>
+): CatalogItem[] {
+  const chronological = [...items].sort(compareChronologically);
+
+  const pinned = chronological
+    .filter((item) => Number.isInteger(layout[item.id]?.order))
+    .map((item) => ({ item, order: Math.max(0, layout[item.id]?.order ?? 0) }))
+    .sort((a, b) => a.order - b.order || compareChronologically(a.item, b.item));
+
+  const unpinned = chronological.filter((item) => !Number.isInteger(layout[item.id]?.order));
+
+  for (const pin of pinned) {
+    const target = Math.min(pin.order, unpinned.length);
+    unpinned.splice(target, 0, pin.item);
+  }
+
+  return unpinned;
+}
+
 function buildInitialFranchiseState(): FranchiseState {
   return Object.fromEntries(
     franchises.map((franchise) => [
@@ -104,7 +177,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
   const [genreFilter, setGenreFilter] = useState<string>("all");
   const [roulettePick, setRoulettePick] = useState<CatalogItem | null>(null);
   const [isDragMode, setIsDragMode] = useState(false);
-  const [dragLayout, setDragLayout] = useState<Record<string, { shelf: string; order: number }>>({});
+  const [dragLayout, setDragLayout] = useState<Record<string, DragLayoutEntry>>({});
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [activeCustomizeShelf, setActiveCustomizeShelf] = useState<string>(SHELF_BLUEPRINTS[0]?.key ?? "horror");
   const [shelfCustomization, setShelfCustomization] = useState<Record<string, ShelfCustomization>>({});
@@ -147,7 +220,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
 
     if (rawDragLayout) {
       try {
-        setDragLayout(JSON.parse(rawDragLayout) as Record<string, { shelf: string; order: number }>);
+        setDragLayout(JSON.parse(rawDragLayout) as Record<string, DragLayoutEntry>);
       } catch {
         setDragLayout({});
       }
@@ -400,16 +473,7 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
     });
 
     Object.entries(grouped).forEach(([shelfKey, items]) => {
-      items.sort((a, b) => {
-        const orderA = dragLayout[a.id]?.order ?? Number.MAX_SAFE_INTEGER;
-        const orderB = dragLayout[b.id]?.order ?? Number.MAX_SAFE_INTEGER;
-        if (orderA === orderB) return a.title.localeCompare(b.title);
-        return orderA - orderB;
-      });
-      if (items.every((item) => dragLayout[item.id]?.order === undefined)) {
-        items.sort((a, b) => a.title.localeCompare(b.title));
-      }
-      grouped[shelfKey] = items;
+      grouped[shelfKey] = sortShelfItemsByChronologyWithPins(items, dragLayout);
     });
 
     // Build shelves from blueprints + custom shelves
@@ -441,57 +505,14 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
     (itemId: string, toShelfKey: string, targetIndex: number) => {
       setDragLayout((prev) => {
         const next = { ...prev };
-        const byShelf: Record<string, CatalogItem[]> = {};
-
-        // Initialize all shelf keys
-        SHELF_BLUEPRINTS.forEach(shelf => {
-          byShelf[shelf.key] = [];
-        });
-        customShelves.forEach(shelf => {
-          byShelf[shelf.key] = [];
-        });
-
-        for (const item of filteredCatalog) {
-          const shelfKey = next[item.id]?.shelf ?? classifyCatalogItem(item);
-          if (!byShelf[shelfKey]) byShelf[shelfKey] = [];
-          byShelf[shelfKey].push(item);
-        }
-
-        for (const [shelfKey, list] of Object.entries(byShelf)) {
-          list.sort((a, b) => {
-            const orderA = next[a.id]?.order ?? Number.MAX_SAFE_INTEGER;
-            const orderB = next[b.id]?.order ?? Number.MAX_SAFE_INTEGER;
-            return orderA - orderB;
-          });
-          if (list.every((item) => next[item.id]?.order === undefined)) {
-            list.sort((a, b) => a.title.localeCompare(b.title));
-          }
-          byShelf[shelfKey] = list;
-        }
-
         const draggedItem = filteredCatalog.find((item) => item.id === itemId);
         if (!draggedItem) return prev;
 
-        const fromShelfKey = next[itemId]?.shelf ?? classifyCatalogItem(draggedItem);
-        const fromList = (byShelf[fromShelfKey] ?? []).filter((item) => item.id !== itemId);
-        const toListBase = fromShelfKey === toShelfKey ? fromList : [...(byShelf[toShelfKey] ?? [])];
-
-        const clampedIndex = Math.max(0, Math.min(targetIndex, toListBase.length));
-        const toList = [...toListBase];
-        toList.splice(clampedIndex, 0, draggedItem);
-
-        const writeOrders = (shelfKey: string, items: CatalogItem[]) => {
-          items.forEach((item, index) => {
-            next[item.id] = { shelf: shelfKey, order: index };
-          });
+        const clampedIndex = Math.max(0, targetIndex);
+        next[itemId] = {
+          shelf: toShelfKey,
+          order: clampedIndex,
         };
-
-        if (fromShelfKey === toShelfKey) {
-          writeOrders(toShelfKey, toList);
-        } else {
-          writeOrders(fromShelfKey, fromList);
-          writeOrders(toShelfKey, toList);
-        }
 
         window.localStorage.setItem(DRAG_LAYOUT_KEY, JSON.stringify(next));
         return next;

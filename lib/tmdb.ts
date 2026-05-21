@@ -178,6 +178,102 @@ function normalizeSearchTitle(value: string): string {
     .trim();
 }
 
+function normalizeForTokenSet(value: string): string[] {
+  const stopWords = new Set([
+    "the",
+    "a",
+    "an",
+    "der",
+    "die",
+    "das",
+    "and",
+    "und",
+    "film",
+    "movie",
+    "part",
+    "chapter",
+    "folge",
+    "staffel"
+  ]);
+
+  return normalizeSearchTitle(value)
+    .replace(/\b(i|ii|iii|iv|v|vi|vii|viii|ix|x)\b/g, (roman) => String(fromRoman(roman.toUpperCase()) ?? roman))
+    .split(" ")
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 2 && !stopWords.has(token));
+}
+
+function extractSequelNumber(value: string | undefined): number | null {
+  if (!value) return null;
+  const normalized = normalizeSearchTitle(value);
+  if (!normalized) return null;
+
+  const digitMatch = normalized.match(/(?:^|\s)(\d{1,2})(?:\s|$)/g);
+  if (digitMatch?.length) {
+    const raw = digitMatch[digitMatch.length - 1]?.match(/\d{1,2}/)?.[0];
+    const parsed = raw ? Number.parseInt(raw, 10) : NaN;
+    if (Number.isFinite(parsed) && parsed >= 1 && parsed <= 99) return parsed;
+  }
+
+  const romanTokenMatch = normalized.match(/(?:^|\s)(x|ix|v?i{1,3}|iv|v)(?:\s|$)/g);
+  if (!romanTokenMatch?.length) return null;
+  const token = romanTokenMatch[romanTokenMatch.length - 1]?.trim().toUpperCase();
+  return token ? fromRoman(token) : null;
+}
+
+function tokenDiceScore(queryTokens: string[], candidateTokens: string[]): number {
+  if (!queryTokens.length || !candidateTokens.length) return 0;
+
+  const queryCounts = new Map<string, number>();
+  queryTokens.forEach((token) => queryCounts.set(token, (queryCounts.get(token) ?? 0) + 1));
+
+  let overlap = 0;
+  for (const token of candidateTokens) {
+    const count = queryCounts.get(token) ?? 0;
+    if (count > 0) {
+      overlap += 1;
+      queryCounts.set(token, count - 1);
+    }
+  }
+
+  return (2 * overlap) / (queryTokens.length + candidateTokens.length);
+}
+
+function levenshteinDistance(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+
+  const row = new Array<number>(b.length + 1);
+  for (let j = 0; j <= b.length; j += 1) row[j] = j;
+
+  for (let i = 1; i <= a.length; i += 1) {
+    let previousDiagonal = row[0] ?? 0;
+    row[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const temp = row[j] ?? 0;
+      const substitutionCost = a[i - 1] === b[j - 1] ? 0 : 1;
+      row[j] = Math.min(
+        (row[j] ?? 0) + 1,
+        (row[j - 1] ?? 0) + 1,
+        previousDiagonal + substitutionCost,
+      );
+      previousDiagonal = temp;
+    }
+  }
+
+  return row[b.length] ?? 0;
+}
+
+function normalizedLevenshteinScore(a: string, b: string): number {
+  const left = a.replace(/\s+/g, "");
+  const right = b.replace(/\s+/g, "");
+  if (!left || !right) return 0;
+  const dist = levenshteinDistance(left, right);
+  const maxLen = Math.max(left.length, right.length);
+  return maxLen ? 1 - dist / maxLen : 0;
+}
+
 function buildSearchVariants(title: string): string[] {
   const variants = new Set<string>();
   const trimmed = title.trim();
@@ -361,13 +457,27 @@ function scoreTitleMatch(candidate: string | undefined, normalizedQuery: string)
 
   const normalizedCandidate = normalizeSearchTitle(candidate);
   if (!normalizedCandidate) return 0;
-  if (normalizedCandidate === normalizedQuery) return 120;
-  if (normalizedCandidate.includes(normalizedQuery) || normalizedQuery.includes(normalizedCandidate)) return 90;
 
-  const queryWords = normalizedQuery.split(" ").filter(Boolean);
-  const candidateWords = new Set(normalizedCandidate.split(" ").filter(Boolean));
-  const overlap = queryWords.filter((word) => candidateWords.has(word)).length;
-  return overlap * 12;
+  if (normalizedCandidate === normalizedQuery) return 170;
+
+  const queryTokens = normalizeForTokenSet(normalizedQuery);
+  const candidateTokens = normalizeForTokenSet(normalizedCandidate);
+  const dice = tokenDiceScore(queryTokens, candidateTokens);
+  const fuzzy = normalizedLevenshteinScore(normalizedQuery, normalizedCandidate);
+
+  let score = dice * 110 + fuzzy * 55;
+
+  if (normalizedCandidate.includes(normalizedQuery) || normalizedQuery.includes(normalizedCandidate)) {
+    score += 24;
+  }
+
+  const querySequel = extractSequelNumber(normalizedQuery);
+  const candidateSequel = extractSequelNumber(normalizedCandidate);
+  if (querySequel && candidateSequel) {
+    score += querySequel === candidateSequel ? 22 : -38;
+  }
+
+  return score;
 }
 
 function scoreYear(dateValue: string | undefined, year?: number): number {
@@ -420,10 +530,16 @@ function pickBestMovieResult(results: TmdbMovie[], title: string, year?: number)
 
   const best = scored[0];
   if (!best) return null;
+  const second = scored[1];
 
   // Reject weak fuzzy matches to avoid incorrect artwork.
-  if (best.score.titleScore < 48) return null;
-  if (year && best.score.yearScore < 0 && best.score.titleScore < 90) return null;
+  if (best.score.titleScore < 86) return null;
+  if (year && best.score.yearScore < 0 && best.score.titleScore < 126) return null;
+
+  // Reject ambiguous top hits unless the best match is clearly strong.
+  if (second && best.score.total - second.score.total < 12 && best.score.titleScore < 145) {
+    return null;
+  }
 
   return best.item;
 }
@@ -437,10 +553,16 @@ function pickBestTvResult(results: TmdbTv[], title: string, year?: number): Tmdb
 
   const best = scored[0];
   if (!best) return null;
+  const second = scored[1];
 
   // Reject weak fuzzy matches to avoid incorrect artwork.
-  if (best.score.titleScore < 48) return null;
-  if (year && best.score.yearScore < 0 && best.score.titleScore < 90) return null;
+  if (best.score.titleScore < 86) return null;
+  if (year && best.score.yearScore < 0 && best.score.titleScore < 126) return null;
+
+  // Reject ambiguous top hits unless the best match is clearly strong.
+  if (second && best.score.total - second.score.total < 12 && best.score.titleScore < 145) {
+    return null;
+  }
 
   return best.item;
 }
@@ -555,9 +677,8 @@ export async function resolveItemPoster(
     return imgPoster(data?.poster_path) ?? null;
   }
 
-  // For safety: without TMDB id we only resolve when year exists,
-  // and only if we get an exact normalized title match.
-  if (!year) return null;
+  // For safety: without TMDB id we only resolve if we get
+  // an exact normalized title match.
 
   const normalizedQuery = normalizeSearchTitle(title);
 
