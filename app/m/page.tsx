@@ -75,7 +75,7 @@ export const metadata: Metadata = {
 };
 
 export default async function MobileLandingPage() {
-  const catalog = await getEnrichedCatalogItems(220, 220, { overwriteExistingPosters: true });
+  const catalog = await getEnrichedCatalogItems(220, 220, { overwriteExistingPosters: false });
   const fallback = catalog.slice(0, 30);
 
   const categories: MobileCategorySection[] = collectionBlueprints.map((blueprint, idx) => {

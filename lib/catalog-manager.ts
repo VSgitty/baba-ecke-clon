@@ -14,6 +14,7 @@ export type CatalogFormInput = {
   cover: string; // URL
   description: string;
   streamUrl?: string;
+  tmdbId?: number;
 };
 
 export function validateCatalogInput(input: Partial<CatalogFormInput>): string[] {
@@ -51,6 +52,7 @@ export function formToCatalogItem(id: string, input: CatalogFormInput): CatalogI
     rating,
     description: input.description,
     streamUrl: input.streamUrl,
+    tmdbId: input.tmdbId,
   };
 }
 

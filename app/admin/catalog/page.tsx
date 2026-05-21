@@ -28,6 +28,7 @@ export default function AdminCatalogPage() {
     cover: "",
     description: "",
     streamUrl: "",
+    tmdbId: undefined,
   });
 
   const handleInputChange = (field: string, value: any) => {
@@ -80,6 +81,7 @@ export default function AdminCatalogPage() {
       if (applyToForm) {
         setForm((prev) => ({
           ...prev,
+          tmdbId: tmdbItem.tmdbId || prev.tmdbId,
           title: tmdbItem.title || prev.title,
           type: tmdbItem.type || prev.type,
           genre: tmdbItem.genre || prev.genre,
@@ -93,6 +95,7 @@ export default function AdminCatalogPage() {
       }
 
       return tmdbItem as {
+        tmdbId?: number;
         title?: string;
         type?: "movie" | "series";
         genre?: string;
@@ -123,6 +126,7 @@ export default function AdminCatalogPage() {
     const effectiveForm: CatalogFormInput = tmdbItem
       ? {
           ...form,
+          tmdbId: tmdbItem.tmdbId || form.tmdbId,
           title: tmdbItem.title || form.title,
           type: tmdbItem.type || form.type,
           genre: tmdbItem.genre || form.genre,
@@ -176,6 +180,7 @@ export default function AdminCatalogPage() {
         cover: "",
         description: "",
         streamUrl: "",
+        tmdbId: undefined,
       });
 
       // Redirect to home after 2 seconds

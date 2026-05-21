@@ -63,7 +63,7 @@ function uniqueById<T extends { id: string }>(items: T[]): T[] {
 
 export default async function TvPage() {
   const catalog = await getEnrichedCatalogItems(240, 180, {
-    overwriteExistingPosters: true,
+    overwriteExistingPosters: false,
   });
 
   const rated = [...catalog].sort((a, b) => (b.rating || 0) - (a.rating || 0));

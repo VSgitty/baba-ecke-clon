@@ -554,15 +554,38 @@ export async function resolveItemPoster(
     const data = await tmdbFetch<{ poster_path: string | null }>(endpoint);
     return imgPoster(data?.poster_path) ?? null;
   }
+
+  // For safety: without TMDB id we only resolve when year exists,
+  // and only if we get an exact normalized title match.
+  if (!year) return null;
+
+  const normalizedQuery = normalizeSearchTitle(title);
+
   if (type === "series") {
     const tv = await searchTv(title, year);
+    const isExactTvMatch =
+      Boolean(tv) &&
+      [tv?.name, tv?.original_name]
+        .filter((value): value is string => Boolean(value))
+        .some((candidate) => normalizeSearchTitle(candidate) === normalizedQuery);
+
+    if (!isExactTvMatch) return null;
     return imgPoster(tv?.poster_path) ?? null;
   }
+
   const movie = await searchMovie(title, year);
+  const isExactMovieMatch =
+    Boolean(movie) &&
+    [movie?.title, movie?.original_title]
+      .filter((value): value is string => Boolean(value))
+      .some((candidate) => normalizeSearchTitle(candidate) === normalizedQuery);
+
+  if (!isExactMovieMatch) return null;
   return imgPoster(movie?.poster_path) ?? null;
 }
 
 export type TmdbCatalogAutofill = {
+  tmdbId: number;
   title: string;
   type: "movie" | "series";
   genre: string;
@@ -610,6 +633,7 @@ export async function resolveCatalogAutofill(
       if (!poster) return null;
 
       return {
+        tmdbId: match.id,
         title: pickLocalizedText(detailDe?.name, detailEn?.name, match.name, title),
         type,
         genre,
@@ -634,6 +658,7 @@ export async function resolveCatalogAutofill(
     if (!poster) return null;
 
     return {
+      tmdbId: match.id,
       title: pickLocalizedText(detailDe?.title, detailEn?.title, match.title, title),
       type,
       genre,

@@ -33,7 +33,7 @@ type RawCatalogEntry = {
   rating?: number | string;
   description?: string;
   streamUrl?: string;
-  tmdbId?: number;
+  tmdbId?: number | string;
 };
 
 function toGenre(genre: string | undefined): string {
@@ -55,6 +55,13 @@ function toYear(value: number | string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function toTmdbId(value: number | string | undefined): number | undefined {
+  if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
+  if (!value) return undefined;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 function toCatalogItem(id: string, item: RawCatalogEntry): CatalogItem {
   return {
     id,
@@ -67,7 +74,7 @@ function toCatalogItem(id: string, item: RawCatalogEntry): CatalogItem {
     rating: toRating(item.rating),
     description: item.description,
     streamUrl: item.streamUrl,
-    tmdbId: item.tmdbId,
+    tmdbId: toTmdbId(item.tmdbId),
   };
 }
 
@@ -139,7 +146,15 @@ export async function getEnrichedCatalogItems(
 
   // Default: enrich only missing posters. Optional TV mode can force TMDB preference.
   const itemsToEnrich = allItems
-    .filter((item) => overwriteExistingPosters || !item.poster)
+    .filter((item) => {
+      if (!overwriteExistingPosters) return !item.poster;
+
+      // Never overwrite curated/manual posters without a stable TMDB id.
+      // This prevents fuzzy title mismatches from replacing correct artwork.
+      if (item.poster && !item.tmdbId) return false;
+
+      return true;
+    })
     .slice(0, Math.min(enrichLimit, allItems.length));
   if (itemsToEnrich.length === 0) return allItems;
 
@@ -155,6 +170,7 @@ export async function getEnrichedCatalogItems(
 
   return allItems.map((item) => {
     if (!overwriteExistingPosters && item.poster) return item;
+    if (overwriteExistingPosters && item.poster && !item.tmdbId) return item;
     const tmdbPoster = posterMap[item.id];
     return tmdbPoster ? { ...item, poster: tmdbPoster } : item;
   });

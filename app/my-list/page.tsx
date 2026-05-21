@@ -9,6 +9,6 @@ export const metadata: Metadata = {
 };
 
 export default async function MyListPage() {
-  const catalog = await getEnrichedCatalogItems(180, 180, { overwriteExistingPosters: true });
+  const catalog = await getEnrichedCatalogItems(180, 180, { overwriteExistingPosters: false });
   return <MyListView catalog={catalog} />;
 }

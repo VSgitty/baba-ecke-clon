@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function StreamsPage() {
-  const catalog = await getEnrichedCatalogItems(220, 220, { overwriteExistingPosters: true });
+  const catalog = await getEnrichedCatalogItems(220, 220, { overwriteExistingPosters: false });
   const streamable = catalog.filter((item) => Boolean(item.streamUrl));
 
   return (
