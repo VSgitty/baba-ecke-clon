@@ -2,6 +2,7 @@ import rawCatalog from "@/data/movies-data.json";
 import { readFile } from "fs/promises";
 import path from "path";
 import { unstable_noStore as noStore } from "next/cache";
+import { resolveItemPoster } from "@/lib/tmdb";
 
 export type CatalogItem = {
   id: string;
@@ -70,7 +71,7 @@ function toCatalogItem(id: string, item: RawCatalogEntry): CatalogItem {
     genre: toGenre(item.genre),
     year: toYear(item.year),
     duration: item.duration,
-    poster: item.poster || item.cover,
+    poster: item.poster,
     rating: toRating(item.rating),
     description: item.description,
     streamUrl: item.streamUrl,
@@ -147,29 +148,19 @@ export async function getCombinedCatalogItems(limit?: number): Promise<CatalogIt
 export async function getEnrichedCatalogItems(
   limit = 120,
   enrichLimit = limit,
-  options: EnrichCatalogOptions = {}
+  _options: EnrichCatalogOptions = {}
 ): Promise<CatalogItem[]> {
   noStore();
   const allItems = await getCombinedCatalogItems(limit);
-  const overwriteExistingPosters = options.overwriteExistingPosters ?? false;
 
-  // Lazy import keeps server-only code tree-shaken from client bundles
-  const { resolveItemPoster } = await import("@/lib/tmdb");
-
-  // Re-enrich all items that do not yet use locally cached poster assets.
-  // This replaces legacy/original cover URLs with TMDB-derived artwork.
-  const itemsToEnrich = allItems
-    .filter((item) => {
-      if (overwriteExistingPosters) return true;
-      return !item.poster || !isLocalCachedPoster(item.poster);
-    })
-    .slice(0, Math.min(enrichLimit, allItems.length));
+  // TMDB-only mode: resolve posters for all items and replace legacy cover URLs.
+  const itemsToEnrich = allItems.slice(0, Math.min(enrichLimit, allItems.length));
 
   let resolvedItems = allItems;
 
   if (itemsToEnrich.length > 0) {
     const enriched = await Promise.allSettled(
-      itemsToEnrich.map((item) => resolveItemPoster(item.title, item.type, item.year, item.tmdbId))
+      itemsToEnrich.map((item) => resolveItemPoster(item.title, item.type, item.year, item.tmdbId, item.genre))
     );
 
     const posterMap: Record<string, string | null> = {};
@@ -182,9 +173,7 @@ export async function getEnrichedCatalogItems(
       const tmdbPoster = posterMap[item.id];
       if (tmdbPoster) return { ...item, poster: tmdbPoster };
 
-      // Keep existing posters as fallback when TMDB can't resolve reliably.
-      if (isLocalCachedPoster(item.poster)) return item;
-      if (item.poster) return item;
+      // TMDB-only mode: never keep legacy external covers.
       return { ...item, poster: undefined };
     });
   }

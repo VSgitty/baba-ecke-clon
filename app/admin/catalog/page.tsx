@@ -88,7 +88,7 @@ export default function AdminCatalogPage() {
           year: tmdbItem.year || prev.year,
           duration: tmdbItem.duration || prev.duration,
           rating: tmdbItem.rating || prev.rating,
-          cover: tmdbItem.poster || prev.cover,
+          cover: prev.cover || tmdbItem.poster || prev.cover,
           description: tmdbItem.description || prev.description
         }));
         setAutofillMessage(`✅ TMDB-Daten für "${tmdbItem.title}" automatisch übernommen.`);
@@ -133,7 +133,7 @@ export default function AdminCatalogPage() {
           year: tmdbItem.year || form.year,
           duration: tmdbItem.duration || form.duration,
           rating: tmdbItem.rating || form.rating,
-          cover: tmdbItem.poster || form.cover,
+          cover: form.cover || tmdbItem.poster || form.cover,
           description: tmdbItem.description || form.description
         }
       : form;

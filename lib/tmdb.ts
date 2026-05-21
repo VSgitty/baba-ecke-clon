@@ -115,27 +115,27 @@ const SEARCH_LANGUAGES = ["de-DE", "en-US"] as const;
 
 // ── Search ───────────────────────────────────────────────────────
 
-export async function searchMovie(title: string, year?: number): Promise<TmdbMovie | null> {
+export async function searchMovie(title: string, year?: number, genreHint?: string): Promise<TmdbMovie | null> {
   const strictResults = await searchMovieCandidates(title, year);
-  const strictMatch = pickBestMovieResult(strictResults, title, year);
+  const strictMatch = await pickBestMovieResult(strictResults, title, year, genreHint);
   if (strictMatch) return strictMatch;
 
   if (year) {
     const relaxedResults = await searchMovieCandidates(title);
-    return pickBestMovieResult(relaxedResults, title, year);
+    return pickBestMovieResult(relaxedResults, title, year, genreHint);
   }
 
   return null;
 }
 
-export async function searchTv(title: string, year?: number): Promise<TmdbTv | null> {
+export async function searchTv(title: string, year?: number, genreHint?: string): Promise<TmdbTv | null> {
   const strictResults = await searchTvCandidates(title, year);
-  const strictMatch = pickBestTvResult(strictResults, title, year);
+  const strictMatch = await pickBestTvResult(strictResults, title, year, genreHint);
   if (strictMatch) return strictMatch;
 
   if (year) {
     const relaxedResults = await searchTvCandidates(title);
-    return pickBestTvResult(relaxedResults, title, year);
+    return pickBestTvResult(relaxedResults, title, year, genreHint);
   }
 
   return null;
@@ -219,6 +219,101 @@ function extractSequelNumber(value: string | undefined): number | null {
   if (!romanTokenMatch?.length) return null;
   const token = romanTokenMatch[romanTokenMatch.length - 1]?.trim().toUpperCase();
   return token ? fromRoman(token) : null;
+}
+
+function normalizeBaseTitle(value: string | undefined): string {
+  if (!value) return "";
+  return normalizeSearchTitle(value)
+    .replace(/\b(part|chapter|episode|folge|film|movie|staffel|season|vol|volume)\b/g, " ")
+    .replace(/\b(\d{1,2}|x|ix|v?i{1,3}|iv|v)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function stripTrailingSequenceMarker(value: string): string {
+  return value.replace(/\s*\(\d{1,2}\)\s*$/, "").trim();
+}
+
+function extractComparableYear(dateValue: string | undefined): number | null {
+  if (!dateValue) return null;
+  const parsed = Number.parseInt(dateValue.slice(0, 4), 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function isStrictTitleCandidateMatch(queryTitle: string, candidateTitle: string | undefined): boolean {
+  if (!candidateTitle) return false;
+
+  const queryTitleCore = stripTrailingSequenceMarker(queryTitle);
+  const querySequel = extractSequelNumber(queryTitleCore);
+  const candidateSequel = extractSequelNumber(candidateTitle);
+
+  if (querySequel !== null && candidateSequel !== null && querySequel !== candidateSequel) {
+    return false;
+  }
+
+  // If query explicitly asks for a sequel part, reject candidates without that part number.
+  if (querySequel !== null && candidateSequel === null) {
+    return false;
+  }
+
+  const queryBase = normalizeBaseTitle(queryTitleCore);
+  const candidateBase = normalizeBaseTitle(candidateTitle);
+  if (!queryBase || !candidateBase) return false;
+
+  if (candidateBase === queryBase) return true;
+  return candidateBase.includes(queryBase) || queryBase.includes(candidateBase);
+}
+
+async function isMovieIdMatch(
+  item: TmdbMovie | null,
+  requestedTitle: string,
+  requestedYear?: number,
+  genreHint?: string
+): Promise<boolean> {
+  if (!item) return false;
+
+  const titleOk = [item.title, item.original_title]
+    .filter((value): value is string => Boolean(value))
+    .some((candidate) => isStrictTitleCandidateMatch(requestedTitle, candidate));
+
+  if (!titleOk) return false;
+  if (requestedYear) {
+    const itemYear = extractComparableYear(item.release_date);
+    if (itemYear !== null && Math.abs(itemYear - requestedYear) > 1) return false;
+  }
+
+  const genreHints = parseGenreHints(genreHint);
+  if (!genreHints.length) return true;
+
+  const detail = await tmdbFetch<TmdbMovieDetail>(`/movie/${item.id}`, { language: "en-US" });
+  const genreOverlap = scoreGenreOverlap(detail?.genres?.map((genre) => genre.name), genreHints);
+  return genreOverlap > 0;
+}
+
+async function isTvIdMatch(
+  item: TmdbTv | null,
+  requestedTitle: string,
+  requestedYear?: number,
+  genreHint?: string
+): Promise<boolean> {
+  if (!item) return false;
+
+  const titleOk = [item.name, item.original_name]
+    .filter((value): value is string => Boolean(value))
+    .some((candidate) => isStrictTitleCandidateMatch(requestedTitle, candidate));
+
+  if (!titleOk) return false;
+  if (requestedYear) {
+    const itemYear = extractComparableYear(item.first_air_date);
+    if (itemYear !== null && Math.abs(itemYear - requestedYear) > 1) return false;
+  }
+
+  const genreHints = parseGenreHints(genreHint);
+  if (!genreHints.length) return true;
+
+  const detail = await tmdbFetch<TmdbTvDetail>(`/tv/${item.id}`, { language: "en-US" });
+  const genreOverlap = scoreGenreOverlap(detail?.genres?.map((genre) => genre.name), genreHints);
+  return genreOverlap > 0;
 }
 
 function tokenDiceScore(queryTokens: string[], candidateTokens: string[]): number {
@@ -404,6 +499,34 @@ function buildPossessiveVariants(value: string): string[] {
   return Array.from(variants).filter((variant) => variant.trim().length >= 2);
 }
 
+function normalizeGenreLabel(value: string): string {
+  const normalized = normalizeSearchTitle(value);
+  if (!normalized) return "";
+  if (normalized === "sci fi" || normalized === "science fiction") return "science fiction";
+  if (normalized === "tv movie") return "tv movie";
+  return normalized;
+}
+
+function parseGenreHints(genreHint?: string): string[] {
+  if (!genreHint) return [];
+  return genreHint
+    .split(",")
+    .map((genre) => normalizeGenreLabel(genre))
+    .filter((genre) => Boolean(genre));
+}
+
+function scoreGenreOverlap(candidateGenres: string[] | undefined, genreHints: string[]): number {
+  if (!genreHints.length || !candidateGenres?.length) return 0;
+
+  const candidateSet = new Set(candidateGenres.map((genre) => normalizeGenreLabel(genre)).filter(Boolean));
+  let overlap = 0;
+  for (const genre of genreHints) {
+    if (candidateSet.has(genre)) overlap += 1;
+  }
+
+  return overlap;
+}
+
 async function searchMovieCandidates(title: string, year?: number): Promise<TmdbMovie[]> {
   const resultMap = new Map<number, TmdbMovie>();
 
@@ -492,41 +615,69 @@ function scoreYear(dateValue: string | undefined, year?: number): number {
 type MatchScore = {
   titleScore: number;
   yearScore: number;
+  genreScore: number;
   total: number;
 };
 
-function getMovieMatchScore(item: TmdbMovie, normalizedTitle: string, year?: number): MatchScore {
+async function getMovieMatchScore(
+  item: TmdbMovie,
+  normalizedTitle: string,
+  year?: number,
+  genreHints: string[] = []
+): Promise<MatchScore> {
   const titleScore = Math.max(
     scoreTitleMatch(item.title, normalizedTitle),
     scoreTitleMatch(item.original_title, normalizedTitle)
   );
   const yearScore = scoreYear(item.release_date, year);
+  const detail = genreHints.length ? await tmdbFetch<TmdbMovieDetail>(`/movie/${item.id}`, { language: "en-US" }) : null;
+  const genreOverlap = scoreGenreOverlap(detail?.genres?.map((genre) => genre.name), genreHints);
+  const genreScore = genreHints.length ? (genreOverlap > 0 ? 18 + (genreOverlap - 1) * 8 : -32) : 0;
+
   return {
     titleScore,
     yearScore,
-    total: titleScore + yearScore + (item.popularity ?? 0) / 100,
+    genreScore,
+    total: titleScore + yearScore + genreScore + (item.popularity ?? 0) / 100,
   };
 }
 
-function getTvMatchScore(item: TmdbTv, normalizedTitle: string, year?: number): MatchScore {
+async function getTvMatchScore(
+  item: TmdbTv,
+  normalizedTitle: string,
+  year?: number,
+  genreHints: string[] = []
+): Promise<MatchScore> {
   const titleScore = Math.max(
     scoreTitleMatch(item.name, normalizedTitle),
     scoreTitleMatch(item.original_name, normalizedTitle)
   );
   const yearScore = scoreYear(item.first_air_date, year);
+  const detail = genreHints.length ? await tmdbFetch<TmdbTvDetail>(`/tv/${item.id}`, { language: "en-US" }) : null;
+  const genreOverlap = scoreGenreOverlap(detail?.genres?.map((genre) => genre.name), genreHints);
+  const genreScore = genreHints.length ? (genreOverlap > 0 ? 18 + (genreOverlap - 1) * 8 : -32) : 0;
+
   return {
     titleScore,
     yearScore,
-    total: titleScore + yearScore + (item.popularity ?? 0) / 100,
+    genreScore,
+    total: titleScore + yearScore + genreScore + (item.popularity ?? 0) / 100,
   };
 }
 
-function pickBestMovieResult(results: TmdbMovie[], title: string, year?: number): TmdbMovie | null {
+async function pickBestMovieResult(results: TmdbMovie[], title: string, year?: number, genreHint?: string): Promise<TmdbMovie | null> {
   if (!results.length) return null;
   const normalizedTitle = normalizeSearchTitle(title);
-  const scored = results
-    .map((item) => ({ item, score: getMovieMatchScore(item, normalizedTitle, year) }))
-    .sort((a, b) => b.score.total - a.score.total);
+  const genreHints = parseGenreHints(genreHint);
+  const strictCandidates = results.filter((item) =>
+    isStrictTitleCandidateMatch(title, item.title) || isStrictTitleCandidateMatch(title, item.original_title)
+  );
+
+  const source = strictCandidates.length ? strictCandidates : results;
+  const scored = await Promise.all(
+    source.map(async (item) => ({ item, score: await getMovieMatchScore(item, normalizedTitle, year, genreHints) }))
+  );
+  scored.sort((a, b) => b.score.total - a.score.total);
 
   const best = scored[0];
   if (!best) return null;
@@ -535,6 +686,7 @@ function pickBestMovieResult(results: TmdbMovie[], title: string, year?: number)
   // Reject weak fuzzy matches to avoid incorrect artwork.
   if (best.score.titleScore < 86) return null;
   if (year && best.score.yearScore < 0 && best.score.titleScore < 126) return null;
+  if (genreHints.length && best.score.genreScore < 0) return null;
 
   // Reject ambiguous top hits unless the best match is clearly strong.
   if (second && best.score.total - second.score.total < 12 && best.score.titleScore < 145) {
@@ -544,12 +696,19 @@ function pickBestMovieResult(results: TmdbMovie[], title: string, year?: number)
   return best.item;
 }
 
-function pickBestTvResult(results: TmdbTv[], title: string, year?: number): TmdbTv | null {
+async function pickBestTvResult(results: TmdbTv[], title: string, year?: number, genreHint?: string): Promise<TmdbTv | null> {
   if (!results.length) return null;
   const normalizedTitle = normalizeSearchTitle(title);
-  const scored = results
-    .map((item) => ({ item, score: getTvMatchScore(item, normalizedTitle, year) }))
-    .sort((a, b) => b.score.total - a.score.total);
+  const genreHints = parseGenreHints(genreHint);
+  const strictCandidates = results.filter((item) =>
+    isStrictTitleCandidateMatch(title, item.name) || isStrictTitleCandidateMatch(title, item.original_name)
+  );
+
+  const source = strictCandidates.length ? strictCandidates : results;
+  const scored = await Promise.all(
+    source.map(async (item) => ({ item, score: await getTvMatchScore(item, normalizedTitle, year, genreHints) }))
+  );
+  scored.sort((a, b) => b.score.total - a.score.total);
 
   const best = scored[0];
   if (!best) return null;
@@ -558,6 +717,7 @@ function pickBestTvResult(results: TmdbTv[], title: string, year?: number): Tmdb
   // Reject weak fuzzy matches to avoid incorrect artwork.
   if (best.score.titleScore < 86) return null;
   if (year && best.score.yearScore < 0 && best.score.titleScore < 126) return null;
+  if (genreHints.length && best.score.genreScore < 0) return null;
 
   // Reject ambiguous top hits unless the best match is clearly strong.
   if (second && best.score.total - second.score.total < 12 && best.score.titleScore < 145) {
@@ -669,37 +829,42 @@ export async function resolveItemPoster(
   type: "movie" | "series",
   year?: number,
   tmdbId?: number,
+  genreHint?: string,
 ): Promise<string | null> {
-  // Direct ID lookup — guaranteed correct, no fuzzy matching
+  // 1) Prefer explicit TMDB ids, but only if title/year/genre validation passes.
   if (tmdbId) {
-    const endpoint = type === "series" ? `/tv/${tmdbId}` : `/movie/${tmdbId}`;
-    const data = await tmdbFetch<{ poster_path: string | null }>(endpoint);
-    return imgPoster(data?.poster_path) ?? null;
+    if (type === "series") {
+      const tvById = await tmdbFetch<TmdbTv>(`/tv/${tmdbId}`);
+      if (await isTvIdMatch(tvById, title, year, genreHint)) {
+        return imgPoster(tvById?.poster_path) ?? null;
+      }
+    } else {
+      const movieById = await tmdbFetch<TmdbMovie>(`/movie/${tmdbId}`);
+      if (await isMovieIdMatch(movieById, title, year, genreHint)) {
+        return imgPoster(movieById?.poster_path) ?? null;
+      }
+    }
   }
 
-  // For safety: without TMDB id we only resolve if we get
-  // an exact normalized title match.
-
-  const normalizedQuery = normalizeSearchTitle(title);
-
+  // 2) Strict fallback search for items without id or with invalid id.
   if (type === "series") {
-    const tv = await searchTv(title, year);
+    const tv = await searchTv(title, year, genreHint);
     const isExactTvMatch =
       Boolean(tv) &&
       [tv?.name, tv?.original_name]
         .filter((value): value is string => Boolean(value))
-        .some((candidate) => normalizeSearchTitle(candidate) === normalizedQuery);
+        .some((candidate) => isStrictTitleCandidateMatch(title, candidate));
 
     if (!isExactTvMatch) return null;
     return imgPoster(tv?.poster_path) ?? null;
   }
 
-  const movie = await searchMovie(title, year);
+  const movie = await searchMovie(title, year, genreHint);
   const isExactMovieMatch =
     Boolean(movie) &&
     [movie?.title, movie?.original_title]
       .filter((value): value is string => Boolean(value))
-      .some((candidate) => normalizeSearchTitle(candidate) === normalizedQuery);
+      .some((candidate) => isStrictTitleCandidateMatch(title, candidate));
 
   if (!isExactMovieMatch) return null;
   return imgPoster(movie?.poster_path) ?? null;
