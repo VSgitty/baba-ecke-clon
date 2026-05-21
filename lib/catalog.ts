@@ -78,6 +78,10 @@ function toCatalogItem(id: string, item: RawCatalogEntry): CatalogItem {
   };
 }
 
+function isLocalCachedPoster(poster: string | undefined): boolean {
+  return Boolean(poster && poster.startsWith("/cache/posters/"));
+}
+
 export function getCatalogItems(limit?: number): CatalogItem[] {
   const entries = Object.entries(rawCatalog as Record<string, RawCatalogEntry>);
   const actualLimit = limit ? Math.min(limit, entries.length) : entries.length;
@@ -144,34 +148,38 @@ export async function getEnrichedCatalogItems(
   // Lazy import keeps server-only code tree-shaken from client bundles
   const { resolveItemPoster } = await import("@/lib/tmdb");
 
-  // Default: enrich only missing posters. Optional TV mode can force TMDB preference.
+  // Re-enrich all items that do not yet use locally cached poster assets.
+  // This replaces legacy/original cover URLs with TMDB-derived artwork.
   const itemsToEnrich = allItems
     .filter((item) => {
-      if (!overwriteExistingPosters) return !item.poster;
-
-      // Never overwrite curated/manual posters without a stable TMDB id.
-      // This prevents fuzzy title mismatches from replacing correct artwork.
-      if (item.poster && !item.tmdbId) return false;
-
-      return true;
+      if (overwriteExistingPosters) return true;
+      return !item.poster || !isLocalCachedPoster(item.poster);
     })
     .slice(0, Math.min(enrichLimit, allItems.length));
-  if (itemsToEnrich.length === 0) return allItems;
 
-  const enriched = await Promise.allSettled(
-    itemsToEnrich.map((item) => resolveItemPoster(item.title, item.type, item.year, item.tmdbId))
-  );
+  let resolvedItems = allItems;
 
-  const posterMap: Record<string, string | null> = {};
-  itemsToEnrich.forEach((item, idx) => {
-    const result = enriched[idx];
-    posterMap[item.id] = result?.status === "fulfilled" ? result.value : null;
-  });
+  if (itemsToEnrich.length > 0) {
+    const enriched = await Promise.allSettled(
+      itemsToEnrich.map((item) => resolveItemPoster(item.title, item.type, item.year, item.tmdbId))
+    );
 
-  return allItems.map((item) => {
-    if (!overwriteExistingPosters && item.poster) return item;
-    if (overwriteExistingPosters && item.poster && !item.tmdbId) return item;
-    const tmdbPoster = posterMap[item.id];
-    return tmdbPoster ? { ...item, poster: tmdbPoster } : item;
-  });
+    const posterMap: Record<string, string | null> = {};
+    itemsToEnrich.forEach((item, idx) => {
+      const result = enriched[idx];
+      posterMap[item.id] = result?.status === "fulfilled" ? result.value : null;
+    });
+
+    resolvedItems = allItems.map((item) => {
+      const tmdbPoster = posterMap[item.id];
+      if (tmdbPoster) return { ...item, poster: tmdbPoster };
+
+      // If no TMDB match exists yet, keep already-local cached files only.
+      if (isLocalCachedPoster(item.poster)) return item;
+      return { ...item, poster: undefined };
+    });
+  }
+
+  const { cacheCatalogPosters } = await import("@/lib/poster-cache");
+  return cacheCatalogPosters(resolvedItems);
 }
