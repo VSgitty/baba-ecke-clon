@@ -46,12 +46,18 @@ async function fileExists(absPath: string): Promise<boolean> {
   }
 }
 
+
+async function ensurePosterCacheDir() {
+  try {
+    await mkdir(POSTER_CACHE_DIR, { recursive: true });
+  } catch {}
+}
+
 async function cacheSinglePoster(itemId: string, sourceUrl: string): Promise<string> {
   const { abs, rel } = buildCachedPosterPath(itemId, sourceUrl);
 
+  await ensurePosterCacheDir();
   if (await fileExists(abs)) return rel;
-
-  await mkdir(POSTER_CACHE_DIR, { recursive: true });
 
   const res = await fetch(sourceUrl, {
     headers: { "User-Agent": "baba-ecke-poster-cache/1.0" },
@@ -68,6 +74,7 @@ async function cacheSinglePoster(itemId: string, sourceUrl: string): Promise<str
 }
 
 export async function cacheCatalogPosters(items: CatalogItem[]): Promise<CatalogItem[]> {
+  await ensurePosterCacheDir();
   const cached = await Promise.all(
     items.map(async (item) => {
       if (!item.poster) return item;

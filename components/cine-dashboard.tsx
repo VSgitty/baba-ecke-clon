@@ -177,6 +177,8 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
   const [genreFilter, setGenreFilter] = useState<string>("all");
   const [roulettePick, setRoulettePick] = useState<CatalogItem | null>(null);
   const [isDragMode, setIsDragMode] = useState(false);
+  const [showFranchiseTracker, setShowFranchiseTracker] = useState(false);
+  const [showContinueWatching, setShowContinueWatching] = useState(false);
   const [dragLayout, setDragLayout] = useState<Record<string, DragLayoutEntry>>({});
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [activeCustomizeShelf, setActiveCustomizeShelf] = useState<string>(SHELF_BLUEPRINTS[0]?.key ?? "horror");
@@ -189,213 +191,205 @@ export function CineDashboard({ catalog }: CineDashboardProps) {
   const [hoveredItem, setHoveredItem] = useState<CatalogItem | null>(null);
   const [infoPos, setInfoPos] = useState<InfoPos | null>(null);
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
-  const [dragOverShelfKey, setDragOverShelfKey] = useState<string | null>(null);
-  const [dragOverItemId, setDragOverItemId] = useState<string | null>(null);
 
+    <div className="space-y-10">
+      <section className="site-shell grid w-full gap-3 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
+        {[...
+          { label: "Gesamtkatalog", value: catalog.length, accent: "var(--brand)" },
+          { label: "Watchlist", value: Object.keys(watchlist).length, accent: "var(--neon-cyan)" },
+          { label: "Continue Watching", value: continueWatching.length, accent: "var(--neon-purple)" },
+          { label: "Gefilterte Titel", value: filteredCatalog.length, accent: "var(--brand-strong)" }
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="stat-panel px-5 py-4 cursor-pointer"
+            onClick={() => {
+              if (stat.label === "Continue Watching") {
+                setShowFranchiseTracker(true);
+                setShowContinueWatching(false);
+              } else if (stat.label === "Watchlist") {
+                setShowContinueWatching(true);
+                setShowFranchiseTracker(false);
+              } else {
+                setShowFranchiseTracker(false);
+                setShowContinueWatching(false);
+              }
+            }}
+          >
+            <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">{stat.label}</p>
+            <p
+              className="font-display text-4xl"
+              style={{ color: stat.accent, textShadow: `0 0 24px ${stat.accent}55` }}
+            >
+              {stat.value}
+            </p>
+          </div>
+        ))}
+      </section>
 
-  useEffect(() => {
-    const rawWatchlist = window.localStorage.getItem(WATCHLIST_KEY);
-    const rawFranchise = window.localStorage.getItem(FRANCHISE_KEY);
-    const rawDragLayout = window.localStorage.getItem(DRAG_LAYOUT_KEY);
-    const rawShelfCustomization = window.localStorage.getItem(SHELF_CUSTOMIZATION_KEY);
+      {showFranchiseTracker && (
+        <section className="site-shell w-full px-4 sm:px-6 lg:px-8">
+          <Card className="cine-panel">
+            <CardHeader>
+              <CardTitle>Franchise Tracker</CardTitle>
+              <CardDescription>Progress pro Reihe mit schnellem Toggle fuer gesehene Teile.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {franchises.map((franchise) => {
+                const seen = franchise.parts.filter((part) => franchiseState[franchise.slug]?.[part.id]).length;
+                const progress = Math.round((seen / franchise.parts.length) * 100);
+                const visual = franchiseVisuals[franchise.slug];
+                const railItems = [...franchise.parts.map((part) => part.title), ...franchise.parts.map((part) => part.title)];
+                return (
+                  <div
+                    key={franchise.slug}
+                    className="franchise-showcase rounded-2xl border border-white/15 bg-white/[0.04]"
+                  >
+                    <div className={`franchise-banner ${visual?.toneClass || "franchise-tone-action"}`}>
+                      {visual?.poster ? (
+                        <img
+                          src={visual.poster}
+                          alt={`${franchise.title} Banner`}
+                          loading="eager"
+                          fetchPriority="high"
+                          decoding="async"
+                          className="franchise-banner-media"
+                        />
+                      ) : (
+                        <div className="franchise-banner-fallback" aria-hidden />
+                      )}
+                      <div className="franchise-banner-shade" aria-hidden />
+                      <img
+                        src={visual?.svgAsset || "/c/franchise/action.svg"}
+                        alt=""
+                        loading="eager"
+                        fetchPriority="high"
+                        decoding="async"
+                        className="franchise-banner-svg"
+                        aria-hidden
+                      />
+                      <div className="franchise-rail" aria-hidden>
+                        <div className="franchise-rail-track">
+                          {railItems.map((title, index) => (
+                            <span key={`${franchise.slug}-${title}-${index}`}>{title}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
 
-    if (rawWatchlist) {
-      try {
-        setWatchlist(JSON.parse(rawWatchlist) as Record<string, string>);
-      } catch {
-        setWatchlist({});
-      }
-    }
+                    <div className="p-4">
+                      <div className="mb-3 flex items-center justify-between">
+                        <p className="font-medium text-zinc-100">{franchise.title}</p>
+                        <Badge variant="muted">{progress}%</Badge>
+                      </div>
+                      <div className="space-y-2">
+                        {franchise.parts.map((part) => (
+                          <label key={part.id} className="flex items-center justify-between gap-3 rounded-lg px-1 py-1.5">
+                            <span className="text-sm text-zinc-300">
+                              {part.title} ({part.year})
+                            </span>
+                            <input
+                              type="checkbox"
+                              checked={Boolean(franchiseState[franchise.slug]?.[part.id])}
+                              onChange={() => toggleFranchisePart(franchise.slug, part.id)}
+                              className="h-4 w-4 rounded border-border"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        </section>
+      )}
 
-    if (rawFranchise) {
-      try {
-        setFranchiseState((prev) => ({
-          ...prev,
-          ...(JSON.parse(rawFranchise) as FranchiseState)
-        }));
-      } catch {
-        setFranchiseState(buildInitialFranchiseState());
-      }
-    }
+      {showContinueWatching && (
+        <section className="site-shell grid w-full gap-4 px-4 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
+          <Card className="cine-panel">
+            <CardHeader>
+              <CardTitle>Weiter schauen</CardTitle>
+              <CardDescription>Naechste sinnvolle Schritte ueber deine Franchises hinweg.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-3 sm:grid-cols-2">
+              {continueWatching.map((item, index) => {
+                const slug = franchiseSlugByTitle[item.franchise];
+                const visual = slug ? franchiseVisuals[slug] : null;
+                const partPoster =
+                  catalog.find(
+                    (entry) =>
+                      entry.poster && normalizeTitle(entry.title).includes(normalizeTitle(item.part))
+                  )?.poster || visual?.poster;
+                const railItems = [item.franchise, item.part, "Continue", "Watchlist", item.franchise, item.part, "Continue", "Watchlist"];
 
-    if (rawDragLayout) {
-      try {
-        setDragLayout(JSON.parse(rawDragLayout) as Record<string, DragLayoutEntry>);
-      } catch {
-        setDragLayout({});
-      }
-    }
+                return (
+                  <motion.div
+                    key={`${item.franchise}-${item.part}`}
+                    className={`continue-card ${visual?.toneClass || "franchise-tone-action"}`}
+                    initial={{ opacity: 0, y: 14 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-40px" }}
+                    transition={{ duration: 0.35, delay: index * 0.05, ease: [0.23, 1, 0.32, 1] }}
+                    whileHover={{ y: -3, scale: 1.01 }}
+                  >
+                    <div className="continue-card-media-wrap" aria-hidden>
+                      {partPoster ? (
+                        <img
+                          src={partPoster}
+                          alt=""
+                          loading="eager"
+                          fetchPriority="high"
+                          decoding="async"
+                          className="continue-card-media"
+                        />
+                      ) : (
+                        <div className="continue-card-media-fallback" />
+                      )}
+                      <div className="continue-card-shade" />
+                      <div className="continue-card-rail">
+                        <div className="continue-card-rail-track">
+                          {railItems.map((rail, railIndex) => (
+                            <span key={`${item.franchise}-${rail}-${railIndex}`}>{rail}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
 
-    if (rawShelfCustomization) {
-      try {
-        setShelfCustomization(JSON.parse(rawShelfCustomization) as Record<string, ShelfCustomization>);
-      } catch {
-        setShelfCustomization({});
-      }
-    }
+                    <div className="continue-card-content">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-zinc-100">{item.franchise}</p>
+                        <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/25 px-2 py-0.5 text-[10px] text-zinc-300">
+                          <Clock3 className="h-3 w-3" />
+                          {item.progress}%
+                        </span>
+                      </div>
+                      <p className="mt-1 line-clamp-1 text-sm text-zinc-300">Next: {item.part}</p>
 
-    // Load custom shelves
-    const loadShelves = async () => {
-      const shelves = await loadCustomShelves();
-      setCustomShelves(shelves);
-    };
-    loadShelves();
-  }, []);
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                        <motion.div
+                          className="continue-card-progress"
+                          initial={{ width: 0 }}
+                          whileInView={{ width: `${item.progress}%` }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 0.8, delay: 0.08 + index * 0.04, ease: [0.22, 1, 0.36, 1] }}
+                          aria-hidden
+                        />
+                      </div>
 
-  const saveShelfCustomization = useCallback((next: Record<string, ShelfCustomization>) => {
-    setShelfCustomization(next);
-    window.localStorage.setItem(SHELF_CUSTOMIZATION_KEY, JSON.stringify(next));
-  }, []);
-
-  const updateShelfCustomization = useCallback(
-    (shelfKey: string, patch: Partial<ShelfCustomization>) => {
-      setShelfCustomization((prev) => {
-        const next = {
-          ...prev,
-          [shelfKey]: {
-            ...(prev[shelfKey] ?? {}),
-            ...patch
-          }
-        };
-        window.localStorage.setItem(SHELF_CUSTOMIZATION_KEY, JSON.stringify(next));
-        return next;
-      });
-    },
-    []
-  );
-
-  const resetShelfCustomization = useCallback(
-    (shelfKey: string) => {
-      const next = { ...shelfCustomization };
-      delete next[shelfKey];
-      saveShelfCustomization(next);
-    },
-    [saveShelfCustomization, shelfCustomization]
-  );
-
-  const processUploadedImage = useCallback(async (file: File) => {
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result ?? ""));
-      reader.onerror = () => reject(new Error("File konnte nicht gelesen werden"));
-      reader.readAsDataURL(file);
-    });
-
-    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error("Bild konnte nicht geladen werden"));
-      img.src = dataUrl;
-    });
-
-    const maxWidth = 1920;
-    const scale = Math.min(1, maxWidth / image.width);
-    const width = Math.max(320, Math.round(image.width * scale));
-    const height = Math.max(220, Math.round(image.height * scale));
-
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      return {
-        optimizedImage: dataUrl,
-        derived: {
-          brightness: 1.04,
-          contrast: 1.08,
-          saturation: 1.08,
-          overlayOpacity: 0.48,
-          blurPx: 0.5
-        }
-      };
-    }
-
-    ctx.drawImage(image, 0, 0, width, height);
-
-    const sample = ctx.getImageData(0, 0, width, height).data;
-    let luminanceSum = 0;
-    let luminanceSqSum = 0;
-    let sampleCount = 0;
-    const step = Math.max(1, Math.floor((width * height) / 12000));
-    for (let i = 0; i < sample.length; i += 4 * step) {
-      const r = sample[i] ?? 0;
-      const g = sample[i + 1] ?? 0;
-      const b = sample[i + 2] ?? 0;
-      const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-      luminanceSum += l;
-      luminanceSqSum += l * l;
-      sampleCount += 1;
-    }
-
-    const avgLum = sampleCount ? luminanceSum / sampleCount : 128;
-    const variance = sampleCount ? luminanceSqSum / sampleCount - avgLum * avgLum : 2500;
-    const stdDev = Math.sqrt(Math.max(0, variance));
-
-    const brightness = clamp(1 + (120 - avgLum) / 420, 0.82, 1.2);
-    const contrast = clamp(1.06 + (74 - stdDev) / 300, 1.02, 1.22);
-    const saturation = clamp(1.05 + (84 - stdDev) / 450, 1, 1.2);
-    const overlayOpacity = clamp(0.44 + (avgLum > 160 ? 0.08 : 0) + (avgLum < 92 ? -0.04 : 0), 0.3, 0.66);
-
-    const enhancementCanvas = document.createElement("canvas");
-    enhancementCanvas.width = width;
-    enhancementCanvas.height = height;
-    const enhancementCtx = enhancementCanvas.getContext("2d");
-    if (enhancementCtx) {
-      enhancementCtx.filter = `brightness(${brightness}) contrast(${contrast}) saturate(${saturation})`;
-      enhancementCtx.drawImage(canvas, 0, 0);
-    }
-
-    const optimizedImage = (enhancementCtx ? enhancementCanvas : canvas).toDataURL("image/jpeg", 0.9);
-
-    return {
-      optimizedImage,
-      derived: {
-        brightness,
-        contrast,
-        saturation,
-        overlayOpacity,
-        blurPx: 0.5
-      }
-    };
-  }, []);
-
-  const handleShelfImageUpload = useCallback(
-    async (shelfKey: string, file: File | null) => {
-      if (!file) return;
-      if (!file.type.startsWith("image/")) return;
-      setIsOptimizingImage(true);
-      try {
-        const { optimizedImage, derived } = await processUploadedImage(file);
-        updateShelfCustomization(shelfKey, {
-          bgImage: optimizedImage,
-          brightness: derived.brightness,
-          contrast: derived.contrast,
-          saturation: derived.saturation,
-          overlayOpacity: derived.overlayOpacity,
-          blurPx: derived.blurPx,
-          zoom: 110,
-          positionY: 50
-        });
-      } finally {
-        setIsOptimizingImage(false);
-      }
-    },
-    [processUploadedImage, updateShelfCustomization]
-  );
-
-  const genres = useMemo(() => {
-    const values = new Set(catalog.map((item) => item.genre).filter(Boolean));
-    return ["all", ...Array.from(values).slice(0, 10)];
-  }, [catalog]);
-
-  const filteredCatalog = useMemo(() => {
-    return catalog.filter((item) => {
-      const typeOk = typeFilter === "all" || item.type === typeFilter;
-      const genreOk = genreFilter === "all" || item.genre === genreFilter;
-      return typeOk && genreOk;
-    });
-  }, [catalog, typeFilter, genreFilter]);
-
+                      <div className="mt-3 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-strong)]">
+                        <Play className="h-3 w-3" />
+                        Continue Arc
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        </section>
+      )}
   const continueWatching = useMemo(() => {
     return franchises
       .map((franchise) => {
